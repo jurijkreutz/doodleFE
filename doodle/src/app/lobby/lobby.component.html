@@ -1,1 +1,13 @@
-<p>lobby works!</p>
+<div class="lobby-container">
+  <div class="upper-container">
+    <div class="chat-window">Chat Window</div>
+    <div class="player-list">Player List</div>
+  </div>
+  <div class="lower-container">
+    <span class="code" (click)="copyToClipboard()">Code: {{ this.lobbyId }}</span>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+  <span *ngIf="!copiedCodeToClipboard" class="hint">Tip: Click on the code to copy & and share it with your co-players!</span>
+  <span *ngIf="copiedCodeToClipboard" class="hint">Copied lobby code to clipboard. Share it now!</span>
+</div>
+
