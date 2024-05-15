@@ -1,9 +1,21 @@
 .doodle-logo {
   display: block;
-  margin: 50px auto 30px;
-  width: 300px;
+  margin: 40px auto 40px;
+  width: 380px;
 }
 
 .main-content {
   margin: 30px;
+}
+
+.footer {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #cadbfd;
+  border-radius: 8px;
+  font-family: "Rubik", sans-serif;
+  text-align: center;
+  width: 90%;
 }

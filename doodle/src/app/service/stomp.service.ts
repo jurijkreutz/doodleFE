@@ -41,6 +41,20 @@ export class StompService {
     });
   }
 
+  public subscribeToChat(lobbyId: string, callback: (message: any) => void) {
+    this.rxStomp.watch(`/topic/lobby/${lobbyId}/chat`).subscribe((message: Message) => {
+      callback(JSON.parse(message.body));
+    });
+  }
+
+  public sendMessage(lobbyId: string, message: any) {
+    this.rxStomp.publish({ destination: `/app/chat.send/${lobbyId}`, body: JSON.stringify(message) });
+  }
+
+  public addUser(lobbyId: string, message: any) {
+    this.rxStomp.publish({ destination: `/app/chat.addUser/${lobbyId}`, body: JSON.stringify(message) });
+  }
+
   disconnect() {
     this.rxStomp.deactivate();
   }

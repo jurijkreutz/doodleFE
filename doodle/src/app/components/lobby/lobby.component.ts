@@ -3,6 +3,7 @@ import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
 import {StompService} from "../../service/stomp.service";
 import {RestService} from "../../service/rest.service";
+import {FormsModule} from "@angular/forms";
 
 
 @Component({
@@ -10,7 +11,8 @@ import {RestService} from "../../service/rest.service";
   standalone: true,
   imports: [
     NgIf,
-    NgForOf
+    NgForOf,
+    FormsModule
   ],
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss'
@@ -20,6 +22,8 @@ export class LobbyComponent implements AfterViewInit {
   protected isOwner: boolean;
   protected copiedCodeToClipboard: boolean = false;
   protected playerList: string[];
+  protected messages: any[] = [];
+  protected messageContent: string = '';
 
   constructor(private route: ActivatedRoute, private router: Router,
               private stompService: StompService, private restService: RestService) {
@@ -33,6 +37,9 @@ export class LobbyComponent implements AfterViewInit {
       this.stompService.subscribeToLobby(this.lobbyId, (message: any) => {
         this.playerList = message.players;
       });
+      this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
+        this.messages.push(message);
+      });
     }
     window.addEventListener('beforeunload', this.beforeUnloadHandler.bind(this));
   }
@@ -42,6 +49,20 @@ export class LobbyComponent implements AfterViewInit {
       this.restService.sendLeaveLobbyRequest(this.lobbyId).subscribe(() => {
         console.log('Left lobby:', this.lobbyId);
       });
+    }
+  }
+
+  sendMessage(): void {
+    if (this.messageContent.trim() !== '') {
+      const chatMessage = {
+        content: this.messageContent,
+        type: 'CHAT'
+      };
+
+      if (typeof this.lobbyId === "string") {
+        this.stompService.sendMessage(this.lobbyId, chatMessage);
+        this.messageContent = '';
+      }
     }
   }
 
