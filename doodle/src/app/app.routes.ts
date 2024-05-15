@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
-import {MenuComponent} from "./menu/menu.component";
-import {LobbyComponent} from "./lobby/lobby.component";
+import {MenuComponent} from "./components/menu/menu.component";
+import {LobbyComponent} from "./components/lobby/lobby.component";
 
 export const routes: Routes = [
   {

@@ -1,7 +1,14 @@
 <div class="lobby-container">
   <div class="upper-container">
-    <div class="chat-window">Chat Window</div>
-    <div class="player-list">Player List</div>
+    <div class="chat-window">
+      <div class="head">Chat Window</div>
+    </div>
+    <div class="player-list">
+      <div class="head">Player List</div>
+      <div *ngFor="let player of playerList; index as i;">
+        <span>{{ player }}</span>
+      </div>
+    </div>
   </div>
   <div class="lower-container">
     <span class="code" (click)="copyToClipboard()">Code: {{ this.lobbyId }}</span>
