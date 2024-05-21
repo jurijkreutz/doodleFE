@@ -1,8 +1,8 @@
 import {AfterViewInit, Component} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
-import {StompService} from "../../service/stomp.service";
-import {RestService} from "../../service/rest.service";
+import {StompService} from "../../service/api/stomp.service";
+import {RestService} from "../../service/api/rest.service";
 import {FormsModule} from "@angular/forms";
 
 
@@ -39,15 +39,6 @@ export class LobbyComponent implements AfterViewInit {
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
         this.messages.push(message);
-      });
-    }
-    window.addEventListener('beforeunload', this.beforeUnloadHandler.bind(this));
-  }
-
-  beforeUnloadHandler(event: BeforeUnloadEvent) {
-    if (typeof this.lobbyId === "string") {
-      this.restService.sendLeaveLobbyRequest(this.lobbyId).subscribe(() => {
-        console.log('Left lobby:', this.lobbyId);
       });
     }
   }

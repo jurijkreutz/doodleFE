@@ -1,12 +1,13 @@
 import {Component} from '@angular/core';
 import {FormsModule} from "@angular/forms";
-import {RestService} from "../../service/rest.service";
+import {RestService} from "../../service/api/rest.service";
 import {OverlayComponent} from "./overlay/overlay.component";
 import {NgIf} from "@angular/common";
 import {Router} from "@angular/router";
 import {JoinLobbyResponse} from "../../models/response.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {NotificationService} from "../../service/notification.service";
+import {HeartbeatService} from "../../service/heartbeat.service";
 
 @Component({
   selector: 'app-menu',
@@ -24,13 +25,16 @@ export class MenuComponent {
   isOverlayVisible: boolean = true;
   private router: Router;
   private notificationService: NotificationService;
+  private heartBeatService: HeartbeatService;
 
   constructor(restService: RestService,
               router: Router,
-              notificationService: NotificationService) {
+              notificationService: NotificationService,
+              heartBeatService: HeartbeatService) {
     this.restService = restService;
     this.router = router;
     this.notificationService = notificationService;
+    this.heartBeatService = heartBeatService;
   }
 
   lobbyCode: string = "";
@@ -72,6 +76,7 @@ export class MenuComponent {
       () => {
         console.log('Session initialized');
         this.isOverlayVisible = false;
+        this.heartBeatService.startHeartbeat();
       },
       (error: HttpErrorResponse) => {
         console.error('Error initializing session: ', error.message);

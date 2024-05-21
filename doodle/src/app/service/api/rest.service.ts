@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from "@angular/common/http";
 import {catchError, Observable, throwError} from "rxjs";
-import {JoinLobbyResponse} from "../models/response.models";
+import {JoinLobbyResponse} from "../../models/response.models";
 
 @Injectable({
   providedIn: 'root'
@@ -35,16 +35,16 @@ export class RestService {
     );
   }
 
-  public sendLeaveLobbyRequest(lobbyId: string): Observable<void> {
-    const url = `${this.REST_URL}/lobby/leave`;
-    const params = new HttpParams().set('lobbyId', lobbyId);
-    return this.http.post<void>(url, {}, { params, withCredentials: true }).pipe(
+  public sendHeartbeatRequest(): Observable<void> {
+    const url = `${this.REST_URL}/session/heartbeat`;
+    return this.http.post<void>(url, {}, { withCredentials: true }).pipe(
       catchError(this.handleError)
     );
+
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('RestService: Error occurred: ', error);
-    return throwError(() => new Error(error.message));
+    return throwError(() => new Error(error.error.message));
   }
 }
