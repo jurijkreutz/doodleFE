@@ -1,0 +1,21 @@
+<div class="game-container">
+  <div class="upper-container">
+    <div class="drawing-board">
+      <div class="head">Drawing Board</div>
+      <!-- Drawing canvas will go here -->
+      <canvas id="drawingCanvas"></canvas>
+    </div>
+    <div class="guess-section">
+      <div class="guess-window">
+        <div class="head">Guess Window</div>
+        <div *ngFor="let message of messages">
+          {{message}}
+        </div>
+      </div>
+      <div class="guess-input">
+        <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess">
+        <button (click)="sendGuess()">Send</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,7 +1,7 @@
 .doodle-logo {
   display: block;
-  margin: 40px auto 40px;
-  width: 380px;
+  margin: 30px auto 30px;
+  width: 350px;
 }
 
 .main-content {
@@ -10,12 +10,13 @@
 
 .footer {
   position: absolute;
-  bottom: 0;
+  bottom: 20px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   background-color: #cadbfd;
   border-radius: 8px;
   font-family: "Rubik", sans-serif;
   text-align: center;
-  width: 90%;
+  padding: 0 20px;
+  white-space: nowrap;
 }

@@ -1,0 +1,84 @@
+.game-container {
+  display: flex;
+  flex-direction: column;
+  width: 90vw;
+  margin: 20px auto;
+  font-family: "VT323", monospace;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.upper-container {
+  display: flex;
+  width: 100%;
+  font-size: 1.3rem;
+  height: 65vh; /* Adjust height to use more vertical space */
+}
+
+.drawing-board {
+  flex-grow: 4;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin: 10px 0 10px 10px;
+  background-color: white;
+  position: relative;
+}
+
+.drawing-board canvas {
+  width: 100%;
+  height: calc(100% - 20px); /* Adjust canvas size */
+  border: 1px solid #000; /* Placeholder border for canvas */
+}
+
+.guess-section {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+}
+
+.guess-window {
+  flex-grow: 1;
+  border: 1px solid #ccc;
+  padding: 10px;
+  background-color: white;
+  overflow-y: auto; /* Allow scrolling for long messages */
+}
+
+.guess-input {
+  display: flex;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ddd;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  margin-left: 10px;
+  padding: 10px;
+  border: none;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.head {
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+.chat-message {
+  font-size: 1.3rem;
+}

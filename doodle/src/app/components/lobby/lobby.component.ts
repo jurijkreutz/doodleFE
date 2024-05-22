@@ -2,7 +2,6 @@ import {AfterViewInit, Component} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
 import {StompService} from "../../service/api/stomp.service";
-import {RestService} from "../../service/api/rest.service";
 import {FormsModule} from "@angular/forms";
 
 
@@ -26,7 +25,7 @@ export class LobbyComponent implements AfterViewInit {
   protected messageContent: string = '';
 
   constructor(private route: ActivatedRoute, private router: Router,
-              private stompService: StompService, private restService: RestService) {
+              private stompService: StompService) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
     this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
     this.playerList = this.router.getCurrentNavigation()?.extras.state?.['players'] || [];
@@ -38,7 +37,11 @@ export class LobbyComponent implements AfterViewInit {
         this.playerList = message.players;
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
-        this.messages.push(message);
+        if (message.sender === 'server-c4fbc994-7b44-4193-8a6d-c39d365eead6' && message.content === 'start-game') {
+          this.router.navigate(['/game/' + this.lobbyId]);
+        } else {
+          this.messages.push(message);
+        }
       });
     }
   }
@@ -63,5 +66,10 @@ export class LobbyComponent implements AfterViewInit {
         this.copiedCodeToClipboard = true;
       });
     }
+  }
+
+  startGame() {
+    this.stompService.sendStartGame(this.lobbyId);
+    this.router.navigate(['/game/' + this.lobbyId]);
   }
 }

@@ -29,7 +29,7 @@
   </div>
   <div class="lower-container">
     <span class="code" (click)="copyToClipboard()">Code: {{ this.lobbyId }}</span>
-    <button onclick="startGame()">Start Game</button>
+    <button (click)="startGame()">Start Game</button>
   </div>
   <span *ngIf="!copiedCodeToClipboard" class="hint">Tip: Click on the code to copy & share it with your co-players!</span>
   <span *ngIf="copiedCodeToClipboard" class="hint">Copied lobby code to clipboard. Share it now!</span>
