@@ -1,5 +1,8 @@
 export interface JoinLobbyResponse {
   id: string;
-  isOwner: boolean;
   players: string[];
+}
+
+export interface IsOwnerResponse {
+  isOwner: boolean;
 }

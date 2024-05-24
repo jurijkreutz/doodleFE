@@ -12,7 +12,7 @@
           {{message}}
         </div>
       </div>
-      <div class="guess-input">
+      <div *ngIf="!isDrawer" class="guess-input">
         <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess">
         <button (click)="sendGuess()">Send</button>
       </div>

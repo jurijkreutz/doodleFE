@@ -1,6 +1,9 @@
-import { Injectable } from '@angular/core';
-import {Message} from "@stomp/stompjs";
+import {Injectable} from '@angular/core';
+import {IMessage, Message} from "@stomp/stompjs";
 import {RxStomp, RxStompConfig} from "@stomp/rx-stomp";
+import {map, Observable} from "rxjs";
+import {NotificationService} from "../notification.service";
+import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root'
@@ -9,9 +12,15 @@ export class StompService {
 
   private rxStomp: RxStomp;
 
-  constructor() {
+  constructor(private notificationService: NotificationService, private router: Router) {
+    this.rxStomp = new RxStomp();
+    this.configureStomp();
+    this.subscribeToErrors();
+  }
+
+  private configureStomp() {
     const config: RxStompConfig = {
-      brokerURL: 'ws://localhost:8080/native-ws',  // Your WebSocket endpoint
+      brokerURL: 'ws://localhost:8080/native-ws',
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
       reconnectDelay: 200,
@@ -20,9 +29,19 @@ export class StompService {
       },
     };
 
-    this.rxStomp = new RxStomp();
     this.rxStomp.configure(config);
     this.rxStomp.activate();
+  }
+
+  public reconnect() {
+    if (this.rxStomp.connected()) {
+      this.rxStomp.deactivate().then(() => {
+        console.log('Deactivated stomp. Reconnecting...');
+        this.configureStomp();
+      });
+    } else {
+      this.configureStomp();
+    }
   }
 
   /* Lobby */
@@ -92,5 +111,24 @@ export class StompService {
       }
     });
   }
+
+  public errorMessages(): Observable<string> {
+    return this.rxStomp.watch('/user/queue/errors').pipe(
+      map((message: IMessage) => {
+        return message.body;
+      })
+    );
+  }
+
+  private subscribeToErrors() {
+    this.errorMessages().subscribe(message => {
+      console.error('Error from server:', message);
+      this.notificationService.showAsyncError(message + ' Redirecting to start...')
+        .then(() => {
+          this.router.navigate(['/']);
+        });
+    });
+  }
+
 
 }

@@ -1,4 +1,4 @@
-import {AfterViewInit, Component} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
 import {StompService} from "../../service/api/stomp.service";
@@ -24,6 +24,8 @@ export class LobbyComponent implements AfterViewInit {
   protected messages: any[] = [];
   protected messageContent: string = '';
 
+  @ViewChild('scrollMe') myScrollContainer!: ElementRef;
+
   constructor(private route: ActivatedRoute, private router: Router,
               private stompService: StompService) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
@@ -34,6 +36,7 @@ export class LobbyComponent implements AfterViewInit {
   ngAfterViewInit() {
     if (typeof this.lobbyId === "string") {
       this.stompService.subscribeToLobby(this.lobbyId, (message: any) => {
+        console.log(message)
         this.playerList = message.players;
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
@@ -41,6 +44,7 @@ export class LobbyComponent implements AfterViewInit {
           this.router.navigate(['/game/' + this.lobbyId]);
         } else {
           this.messages.push(message);
+          setTimeout(() => this.scrollToBottom(), 50);
         }
       });
     }
@@ -71,5 +75,13 @@ export class LobbyComponent implements AfterViewInit {
   startGame() {
     this.stompService.sendStartGame(this.lobbyId);
     this.router.navigate(['/game/' + this.lobbyId]);
+  }
+
+  scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
+    } catch(err) {
+      console.error('Could not automatically scroll to bottom: ', err);
+    }
   }
 }

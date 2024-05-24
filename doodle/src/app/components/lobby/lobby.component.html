@@ -1,7 +1,7 @@
 <div class="lobby-container">
   <div class="upper-container">
     <div class="chat-section">
-      <div class="chat-window">
+      <div class="chat-window" #scrollMe>
         <div class="head">Chat Window</div>
         <div *ngFor="let message of messages">
           <div *ngIf="message.type === 'JOIN'" class="event-message">

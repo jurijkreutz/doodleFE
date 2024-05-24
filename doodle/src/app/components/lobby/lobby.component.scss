@@ -17,10 +17,11 @@
 }
 
 .chat-section {
-  flex-grow: 3;
+  flex-grow: 2;
   display: flex;
   flex-direction: column;
   margin: 10px;
+  width: 80%;
 }
 
 .chat-window {
@@ -28,6 +29,16 @@
   border: 1px solid #ccc;
   padding: 10px;
   background-color: white;
+  overflow-y: auto;
+  max-height: 300px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.chat-message {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 100%;
 }
 
 .chat-input {
@@ -64,6 +75,9 @@ button:hover {
   padding: 10px;
   margin: 10px;
   background-color: white;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  width: 20%;
 }
 
 .lower-container {

@@ -8,6 +8,7 @@ import {JoinLobbyResponse} from "../../models/response.models";
 import {HttpErrorResponse} from "@angular/common/http";
 import {NotificationService} from "../../service/notification.service";
 import {HeartbeatService} from "../../service/heartbeat.service";
+import {StompService} from "../../service/api/stomp.service";
 
 @Component({
   selector: 'app-menu',
@@ -26,15 +27,18 @@ export class MenuComponent {
   private router: Router;
   private notificationService: NotificationService;
   private heartBeatService: HeartbeatService;
+  private stompService: StompService;
 
   constructor(restService: RestService,
               router: Router,
               notificationService: NotificationService,
-              heartBeatService: HeartbeatService) {
+              heartBeatService: HeartbeatService,
+              stompService: StompService) {
     this.restService = restService;
     this.router = router;
     this.notificationService = notificationService;
     this.heartBeatService = heartBeatService;
+    this.stompService = stompService;
   }
 
   lobbyCode: string = "";
@@ -43,7 +47,7 @@ export class MenuComponent {
     this.restService.sendCreateLobbyRequest().subscribe(
       (response: JoinLobbyResponse) => {
         this.router.navigate(['/lobby/' + response.id], {
-          state: { lobby: response.isOwner, players: response.players }
+          state: { players: response.players }
         });
       },
       (error: HttpErrorResponse) => {
@@ -58,7 +62,7 @@ export class MenuComponent {
       (response: JoinLobbyResponse) => {
         console.log(response);
         this.router.navigate(['/lobby/' + response.id],
-          { state: { lobby: response.isOwner, players: response.players } });
+          { state: { players: response.players } });
       },
       (error: HttpErrorResponse) => {
         console.error('Error joining lobby: ', error.message);
@@ -75,6 +79,7 @@ export class MenuComponent {
     this.restService.sendInitializeSessionRequest(username).subscribe(
       () => {
         console.log('Session initialized');
+        this.stompService.reconnect();
         this.isOverlayVisible = false;
         this.heartBeatService.startHeartbeat();
       },

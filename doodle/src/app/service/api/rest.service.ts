@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from "@angular/common/http";
 import {catchError, Observable, throwError} from "rxjs";
-import {JoinLobbyResponse} from "../../models/response.models";
+import {IsOwnerResponse, JoinLobbyResponse} from "../../models/response.models";
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +31,14 @@ export class RestService {
   public sendCreateLobbyRequest(): Observable<JoinLobbyResponse> {
     const url = `${this.REST_URL}/lobby/create`;
     return this.http.post<any>(url, {}, { withCredentials: true }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  public sendIsOwnerRequest(lobbyId: string): Observable<IsOwnerResponse> {
+    const url = `${this.REST_URL}/lobby/isOwner`;
+    const params = new HttpParams().set('lobbyId', lobbyId);
+    return this.http.get<IsOwnerResponse>(url, { params, withCredentials: true }).pipe(
       catchError(this.handleError)
     );
   }

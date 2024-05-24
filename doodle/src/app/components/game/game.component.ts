@@ -3,6 +3,7 @@ import {FormsModule} from "@angular/forms";
 import {NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
+import {RestService} from "../../service/api/rest.service";
 
 @Component({
   selector: 'app-game',
@@ -19,13 +20,19 @@ export class GameComponent implements OnInit{
   lobbyId: string | null = null;
   messages: string[] = [];
   messageContent: string = '';
+  isDrawer: boolean = false;
 
-  constructor(private route: ActivatedRoute, private stompService: StompService) {
+  constructor(private route: ActivatedRoute, private stompService: StompService, private restService: RestService) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
   }
 
   ngOnInit() {
     this.subscribeToGame();
+    if (this.lobbyId) {
+      this.restService.sendIsOwnerRequest(this.lobbyId).subscribe((isOwner) => {
+        this.setUserRole(isOwner.isOwner);
+      });
+    }
   }
 
   private subscribeToGame() {
@@ -44,6 +51,15 @@ export class GameComponent implements OnInit{
     if (this.lobbyId && this.messageContent.trim().length > 0) {
       this.stompService.sendGuess(this.lobbyId, this.messageContent);
       this.messageContent = '';
+    }
+  }
+
+  private setUserRole(isOwner: boolean) {
+    if (isOwner) {
+      console.log('User is owner');
+      this.isDrawer = true;
+    } else {
+      console.log('User is not owner');
     }
   }
 
