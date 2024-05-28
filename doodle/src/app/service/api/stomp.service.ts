@@ -112,6 +112,16 @@ export class StompService {
     });
   }
 
+  public subscribeToDrawingEvents(lobbyId: string, callback: (drawingEvents: any[]) => void) {
+    this.rxStomp.watch(`/topic/lobby/${lobbyId}/drawing`).subscribe((message: Message) => {
+      callback(JSON.parse(message.body));
+    });
+  }
+
+  public sendDrawingEvents(lobbyId: string, drawingEvents: any[]) {
+    this.rxStomp.publish({ destination: `/app/drawing/${lobbyId}`, body: JSON.stringify(drawingEvents) });
+  }
+
   public errorMessages(): Observable<string> {
     return this.rxStomp.watch('/user/queue/errors').pipe(
       map((message: IMessage) => {

@@ -2,8 +2,10 @@
   <div class="upper-container">
     <div class="drawing-board">
       <div class="head">Drawing Board</div>
-      <!-- Drawing canvas will go here -->
-      <canvas id="drawingCanvas"></canvas>
+        <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
+        <div *ngIf="isDrawer" class="color-picker">
+          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)"></button>
+        </div>
     </div>
     <div class="guess-section">
       <div class="guess-window">
