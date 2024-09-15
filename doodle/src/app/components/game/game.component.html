@@ -3,9 +3,6 @@
     <div class="drawing-board">
       <div class="head">Drawing Board</div>
         <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
-        <div *ngIf="isDrawer" class="color-picker">
-          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)"></button>
-        </div>
     </div>
     <div class="guess-section">
       <div class="guess-window">
@@ -14,9 +11,14 @@
           {{message}}
         </div>
       </div>
-      <div *ngIf="!isDrawer" class="guess-input">
-        <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess">
-        <button (click)="sendGuess()">Send</button>
+      <div class="controls">
+        <div *ngIf="!isDrawer" class="guess-input">
+          <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess">
+          <button (click)="sendGuess()">Send</button>
+        </div>
+        <div *ngIf="isDrawer" class="color-picker">
+          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)"></button>
+        </div>
       </div>
     </div>
   </div>

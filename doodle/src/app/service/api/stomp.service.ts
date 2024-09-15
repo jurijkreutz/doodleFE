@@ -35,6 +35,7 @@ export class StompService {
 
   public reconnect() {
     if (this.rxStomp.connected()) {
+      console.log('Deactivating current connection before reconnecting...');
       this.rxStomp.deactivate().then(() => {
         console.log('Deactivated stomp. Reconnecting...');
         this.configureStomp();
@@ -43,6 +44,7 @@ export class StompService {
       this.configureStomp();
     }
   }
+
 
   /* Lobby */
 
@@ -75,13 +77,17 @@ export class StompService {
   /* Game */
 
   public subscribeToGameState(lobbyId: string, callback: (message: any) => void) {
+    console.log(`Attempting to subscribe to /topic/lobby/${lobbyId}/game-state`);
     this.rxStomp.watch(`/topic/lobby/${lobbyId}/game-state`).subscribe({
       next: (message: Message) => {
-        console.log('Received game state update: ', message.body);
+        console.log('Received game state update for lobby ${lobbyId}: ', message.body);
         callback(JSON.parse(message.body));
       },
       error: (err) => {
         console.error('Error subscribing to game state updates in lobby ' + lobbyId, err);
+      },
+      complete: () => {
+        console.log(`Subscription to /topic/lobby/${lobbyId}/game-state completed`);
       }
     });
   }
@@ -95,8 +101,12 @@ export class StompService {
   }
 
   public sendStartGame(lobbyId: string | null) {
-    this.rxStomp.publish({ destination: `/app/chat.startGame/${lobbyId}`, body: '{}'});
-    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}` });
+    if (!lobbyId) {
+      console.error('Lobby ID is null or undefined');
+      return;
+    }
+    this.rxStomp.publish({ destination: `/app/chat.startGame/${lobbyId}`, body: '{}' });
+    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: '{}' });
   }
 
   public subscribeToGameNotifications(lobbyId: string, callback: (message: any) => void) {
@@ -120,6 +130,12 @@ export class StompService {
 
   public sendDrawingEvents(lobbyId: string, drawingEvents: any[]) {
     this.rxStomp.publish({ destination: `/app/drawing/${lobbyId}`, body: JSON.stringify(drawingEvents) });
+  }
+
+  public subscribeToWordChannel() {
+    this.rxStomp.watch('/user/queue/draw-word').subscribe((message: IMessage) => {
+      console.log('Received word:', message.body);
+    });
   }
 
   public errorMessages(): Observable<string> {

@@ -73,7 +73,6 @@ export class LobbyComponent implements AfterViewInit {
   }
 
   startGame() {
-    this.stompService.sendStartGame(this.lobbyId);
     this.router.navigate(['/game/' + this.lobbyId]);
   }
 

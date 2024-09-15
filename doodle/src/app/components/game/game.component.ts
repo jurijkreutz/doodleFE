@@ -36,6 +36,8 @@ export class GameComponent implements OnInit{
 
   ngOnInit() {
     this.subscribeToGame();
+    this.stompService.subscribeToWordChannel();
+    this.stompService.sendStartGame(this.lobbyId);
     if (this.lobbyId) {
       this.restService.sendIsOwnerRequest(this.lobbyId).subscribe((isOwner) => {
         this.setUserRole(isOwner.isOwner);
