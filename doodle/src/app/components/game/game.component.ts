@@ -4,6 +4,8 @@ import {NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {RestService} from "../../service/api/rest.service";
+import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
+import {WordToDraw} from "../../models/response.models";
 
 @Component({
   selector: 'app-game',
@@ -11,7 +13,8 @@ import {RestService} from "../../service/api/rest.service";
   imports: [
     FormsModule,
     NgForOf,
-    NgIf
+    NgIf,
+    WordOverlayComponent
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -27,6 +30,9 @@ export class GameComponent implements OnInit{
   messages: string[] = [];
   messageContent: string = '';
   isDrawer: boolean = false;
+  wordToDraw: string = '';
+  wordOverlayShown: boolean = false;
+  wordInHeadShown: boolean = false;
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
 
@@ -36,7 +42,7 @@ export class GameComponent implements OnInit{
 
   ngOnInit() {
     this.subscribeToGame();
-    this.stompService.subscribeToWordChannel();
+    this.subscribeToWordChannel();
     this.stompService.sendStartGame(this.lobbyId);
     if (this.lobbyId) {
       this.restService.sendIsOwnerRequest(this.lobbyId).subscribe((isOwner) => {
@@ -64,6 +70,21 @@ export class GameComponent implements OnInit{
         console.log('New game notification:', notification);
       });
     }
+  }
+
+  private subscribeToWordChannel() {
+    this.stompService.subscribeToWordChannel((word) => {
+      this.showWordToDraw(word);
+    });
+  }
+
+  private showWordToDraw(word: WordToDraw) {
+    this.wordToDraw = word.word;
+    this.wordOverlayShown = true;
+    setTimeout(() => {
+      this.wordOverlayShown = false;
+      this.wordInHeadShown = true;
+    }, 5000);
   }
 
   sendGuess() {

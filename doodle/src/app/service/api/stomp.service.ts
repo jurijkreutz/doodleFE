@@ -4,6 +4,7 @@ import {RxStomp, RxStompConfig} from "@stomp/rx-stomp";
 import {map, Observable} from "rxjs";
 import {NotificationService} from "../notification.service";
 import {Router} from "@angular/router";
+import {WordToDraw} from "../../models/response.models";
 
 @Injectable({
   providedIn: 'root'
@@ -132,9 +133,9 @@ export class StompService {
     this.rxStomp.publish({ destination: `/app/drawing/${lobbyId}`, body: JSON.stringify(drawingEvents) });
   }
 
-  public subscribeToWordChannel() {
+  public subscribeToWordChannel(callback: (word: WordToDraw) => void) {
     this.rxStomp.watch('/user/queue/draw-word').subscribe((message: IMessage) => {
-      console.log('Received word:', message.body);
+      callback(JSON.parse(message.body));
     });
   }
 

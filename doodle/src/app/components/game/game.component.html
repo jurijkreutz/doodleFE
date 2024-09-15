@@ -1,7 +1,12 @@
 <div class="game-container">
   <div class="upper-container">
     <div class="drawing-board">
-      <div class="head">Drawing Board</div>
+      <div class="head">
+        <div class="head-left">Drawing Board</div>
+        <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">
+          You are drawing the word: <strong>{{ wordToDraw }}</strong>
+        </div>
+      </div>
         <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
     </div>
     <div class="guess-section">
@@ -23,3 +28,4 @@
     </div>
   </div>
 </div>
+<app-word-overlay *ngIf="wordOverlayShown" [word]="wordToDraw"></app-word-overlay>

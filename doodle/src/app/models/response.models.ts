@@ -6,3 +6,7 @@ export interface JoinLobbyResponse {
 export interface IsOwnerResponse {
   isOwner: boolean;
 }
+
+export interface WordToDraw {
+  word: string;
+}
