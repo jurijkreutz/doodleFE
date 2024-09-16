@@ -60,7 +60,6 @@ export class MenuComponent {
   joinLobby() {
     this.restService.sendJoinLobbyRequest(this.lobbyCode).subscribe(
       (response: JoinLobbyResponse) => {
-        console.log(response);
         this.router.navigate(['/lobby/' + response.id],
           { state: { players: response.players } });
       },

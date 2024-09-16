@@ -26,7 +26,7 @@ export class StompService {
       heartbeatOutgoing: 20000,
       reconnectDelay: 200,
       debug: (msg: string) => {
-        console.log(msg);
+        console.log('- Stomp: ' + msg);
       },
     };
 
@@ -36,9 +36,7 @@ export class StompService {
 
   public reconnect() {
     if (this.rxStomp.connected()) {
-      console.log('Deactivating current connection before reconnecting...');
       this.rxStomp.deactivate().then(() => {
-        console.log('Deactivated stomp. Reconnecting...');
         this.configureStomp();
       });
     } else {
@@ -50,18 +48,14 @@ export class StompService {
   /* Lobby */
 
   public subscribeToLobby(lobbyId: string, callback: (message: any) => void) {
-    console.log(`Attempting to subscribe to /topic/lobby/${lobbyId}`);
     this.rxStomp.watch(`/topic/lobby/${lobbyId}`).subscribe({
       next: (message: Message) => {
-        console.log('Received lobby update message: ', message.body);
         callback(JSON.parse(message.body));
       },
       error: (err) => {
         console.error('Error subscribing to /topic/lobby/' + lobbyId, err);
       },
-      complete: () => {
-        console.log('Subscription to /topic/lobby/' + lobbyId + ' completed');
-      }
+      complete: () => {}
     });
   }
 
@@ -78,18 +72,14 @@ export class StompService {
   /* Game */
 
   public subscribeToGameState(lobbyId: string, callback: (message: any) => void) {
-    console.log(`Attempting to subscribe to /topic/lobby/${lobbyId}/game-state`);
     this.rxStomp.watch(`/topic/lobby/${lobbyId}/game-state`).subscribe({
       next: (message: Message) => {
-        console.log('Received game state update for lobby ${lobbyId}: ', message.body);
         callback(JSON.parse(message.body));
       },
       error: (err) => {
         console.error('Error subscribing to game state updates in lobby ' + lobbyId, err);
       },
-      complete: () => {
-        console.log(`Subscription to /topic/lobby/${lobbyId}/game-state completed`);
-      }
+      complete: () => {}
     });
   }
 
@@ -110,12 +100,10 @@ export class StompService {
     this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: '{}' });
   }
 
-  public subscribeToGameNotifications(lobbyId: string, callback: (message: any) => void) {
+  public subscribeToGuessNotification(lobbyId: string, callback: (message: any) => void) {
     this.rxStomp.watch(`/topic/lobby/${lobbyId}/game`).subscribe({
       next: (message: Message) => {
-        console.log(message);
-        console.log('Received game notification:', message.body);
-        callback(JSON.parse(JSON.stringify(message.body)));
+        callback(JSON.parse(message.body));
       },
       error: (err) => {
         console.error('Error subscribing to game notifications', err);

@@ -36,7 +36,6 @@ export class LobbyComponent implements AfterViewInit {
   ngAfterViewInit() {
     if (typeof this.lobbyId === "string") {
       this.stompService.subscribeToLobby(this.lobbyId, (message: any) => {
-        console.log(message)
         this.playerList = message.players;
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {

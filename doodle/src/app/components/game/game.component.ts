@@ -1,9 +1,8 @@
-import {Component, ElementRef, OnInit, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
-import {RestService} from "../../service/api/rest.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
 import {WordToDraw} from "../../models/response.models";
 
@@ -19,7 +18,7 @@ import {WordToDraw} from "../../models/response.models";
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
 })
-export class GameComponent implements OnInit{
+export class GameComponent implements AfterViewInit{
   @ViewChild('drawingCanvas') drawingCanvas!: ElementRef<HTMLCanvasElement>;
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
@@ -36,19 +35,19 @@ export class GameComponent implements OnInit{
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
 
-  constructor(private route: ActivatedRoute, private stompService: StompService, private restService: RestService) {
+  private boundStartDrawing = this.startDrawing.bind(this);
+  private boundDraw = this.draw.bind(this);
+  private boundStopDrawing = this.stopDrawing.bind(this);
+
+  constructor(private route: ActivatedRoute, private stompService: StompService) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
   }
 
-  ngOnInit() {
+  ngAfterViewInit() {
     this.subscribeToGame();
+    this.prepareDrawingEnv(false);
     this.subscribeToWordChannel();
     this.stompService.sendStartGame(this.lobbyId);
-    if (this.lobbyId) {
-      this.restService.sendIsOwnerRequest(this.lobbyId).subscribe((isOwner) => {
-        this.setUserRole(isOwner.isOwner);
-      });
-    }
     this.initializeDrawingEventSender();
   }
 
@@ -64,16 +63,26 @@ export class GameComponent implements OnInit{
     if (this.lobbyId) {
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
         console.log('New game state:', gameState);
+        this.clearCanvas();
       });
-      this.stompService.subscribeToGameNotifications(this.lobbyId, (notification) => {
-        this.messages.push(notification);
-        console.log('New game notification:', notification);
+      this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
+        this.messages.push(guessEvaluation.guessedCorrectly ?
+          `Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}` :
+          `Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
+        if (guessEvaluation.guessedCorrectly) {
+          this.isDrawer = false;
+          this.removeCanvasEventListeners();
+          this.wordToDraw = '';
+          this.wordOverlayShown = false;
+          this.wordInHeadShown = false;
+        }
       });
     }
   }
 
   private subscribeToWordChannel() {
     this.stompService.subscribeToWordChannel((word) => {
+      this.prepareDrawingEnv(true);
       this.showWordToDraw(word);
     });
   }
@@ -94,31 +103,41 @@ export class GameComponent implements OnInit{
     }
   }
 
-  private setUserRole(isOwner: boolean) {
-    if (isOwner) {
-      console.log('User is owner');
-      this.isDrawer = true;
-      this.setupCanvas();
-    } else {
-      console.log('User is not owner');
-      this.setupCanvas();
-      this.subscribeToDrawingEvents();
+  private prepareDrawingEnv(isDrawer: boolean) {
+    if (!isDrawer) {
+      this.removeCanvasEventListeners();
     }
+
+    this.isDrawer = isDrawer;
+    this.drawingEventsBuffer = [];
+    this.setupCanvas();
+    this.subscribeToDrawingEvents();
   }
 
   private setupCanvas() {
     const canvas = this.drawingCanvas.nativeElement;
     this.canvasContext = canvas.getContext('2d')!;
-    console.log('Canvas context:', this.canvasContext);
 
     this.canvasContext.lineWidth = 5;
     this.canvasContext.lineCap = 'round';
 
     if (this.isDrawer) {
-      canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-      canvas.addEventListener('mousemove', this.draw.bind(this));
-      canvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-      canvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+      canvas.addEventListener('mousedown', this.boundStartDrawing);
+      canvas.addEventListener('mousemove', this.boundDraw);
+      canvas.addEventListener('mouseup', this.boundStopDrawing);
+      canvas.addEventListener('mouseout', this.boundStopDrawing);
+    }
+  }
+
+  private clearCanvas() {
+    if (this.canvasContext && this.drawingCanvas) {
+      this.canvasContext.clearRect(0, 0,
+        this.drawingCanvas.nativeElement.width,
+        this.drawingCanvas.nativeElement.height);
+      this.canvasContext.fillStyle = '#FFFFFF';
+      this.canvasContext.fillRect(0, 0,
+        this.drawingCanvas.nativeElement.width,
+        this.drawingCanvas.nativeElement.height);
     }
   }
 
@@ -135,7 +154,6 @@ export class GameComponent implements OnInit{
 
   private startDrawing(event: MouseEvent) {
     if (!this.isDrawer) return;
-    console.log('Start drawing');
     this.isDrawing = true;
     const pos = this.getMousePosition(event);
     this.canvasContext.beginPath();
@@ -154,7 +172,6 @@ export class GameComponent implements OnInit{
 
   private stopDrawing() {
     if (!this.isDrawing) return;
-    console.log('Stop drawing');
     this.isDrawing = false;
     this.canvasContext.closePath();
     this.addDrawingEventToBuffer('stop', null); // Add to buffer
@@ -208,8 +225,18 @@ export class GameComponent implements OnInit{
   private subscribeToDrawingEvents() {
     if (this.lobbyId) {
       this.stompService.subscribeToDrawingEvents(this.lobbyId, (drawingEvents: any[]) => {
-        this.processDrawingEvent(drawingEvents);
+        if (!this.isDrawer) {
+          this.processDrawingEvent(drawingEvents);
+        }
       });
     }
+  }
+
+  private removeCanvasEventListeners() {
+    const canvas = this.drawingCanvas.nativeElement;
+    canvas.removeEventListener('mousedown', this.boundStartDrawing);
+    canvas.removeEventListener('mousemove', this.boundDraw);
+    canvas.removeEventListener('mouseup', this.boundStopDrawing);
+    canvas.removeEventListener('mouseout', this.boundStopDrawing);
   }
 }
