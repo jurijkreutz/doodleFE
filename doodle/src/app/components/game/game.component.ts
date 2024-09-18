@@ -5,6 +5,8 @@ import {ActivatedRoute} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
 import {WordToDraw} from "../../models/response.models";
+import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay.component";
+import {filter, Subject, take} from "rxjs";
 
 @Component({
   selector: 'app-game',
@@ -13,7 +15,8 @@ import {WordToDraw} from "../../models/response.models";
     FormsModule,
     NgForOf,
     NgIf,
-    WordOverlayComponent
+    WordOverlayComponent,
+    NextRoundOverlayComponent
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -28,12 +31,22 @@ export class GameComponent implements AfterViewInit{
   lobbyId: string | null = null;
   messages: string[] = [];
   messageContent: string = '';
+
   isDrawer: boolean = false;
   wordToDraw: string = '';
   wordOverlayShown: boolean = false;
   wordInHeadShown: boolean = false;
+
+  correctlyGuessedWord: string = '';
+  userThatGuessed: string = '';
+  nextDrawer: string = '';
+  nextRoundScreenShown: boolean = false;
+
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
+
+  private nextRoundScreenSubject = new Subject<boolean>();
+
 
   private boundStartDrawing = this.startDrawing.bind(this);
   private boundDraw = this.draw.bind(this);
@@ -64,6 +77,7 @@ export class GameComponent implements AfterViewInit{
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
         console.log('New game state:', gameState);
         this.clearCanvas();
+        this.nextDrawer = gameState.drawerName;
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
         this.messages.push(guessEvaluation.guessedCorrectly ?
@@ -75,6 +89,7 @@ export class GameComponent implements AfterViewInit{
           this.wordToDraw = '';
           this.wordOverlayShown = false;
           this.wordInHeadShown = false;
+          this.showNextRoundScreen(guessEvaluation.word, guessEvaluation.userThatGuessed);
         }
       });
     }
@@ -82,8 +97,40 @@ export class GameComponent implements AfterViewInit{
 
   private subscribeToWordChannel() {
     this.stompService.subscribeToWordChannel((word) => {
-      this.prepareDrawingEnv(true);
-      this.showWordToDraw(word);
+      this.waitForNextRoundScreenToClose().then(() => {
+        this.prepareDrawingEnv(true);
+        this.showWordToDraw(word);
+      });
+    });
+  }
+
+  private updateNextRoundScreenShown(value: boolean) {
+    this.nextRoundScreenShown = value;
+    this.nextRoundScreenSubject.next(value);
+  }
+
+  private showNextRoundScreen(guessEvaluation: string, userThatGuessed: string) {
+    this.correctlyGuessedWord = guessEvaluation;
+    this.userThatGuessed = userThatGuessed;
+    this.updateNextRoundScreenShown(true);
+    setTimeout(() => {
+      this.updateNextRoundScreenShown(false);
+      this.correctlyGuessedWord = '';
+      this.userThatGuessed = '';
+      this.nextDrawer = '';
+    }, 5000);
+  }
+
+  private waitForNextRoundScreenToClose(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.nextRoundScreenShown) {
+        resolve();
+      } else {
+        this.nextRoundScreenSubject.pipe(
+          filter((shown) => !shown),
+          take(1)
+        ).subscribe(() => resolve());
+      }
     });
   }
 

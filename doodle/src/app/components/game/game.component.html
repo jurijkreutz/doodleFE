@@ -29,3 +29,7 @@
   </div>
 </div>
 <app-word-overlay *ngIf="wordOverlayShown" [word]="wordToDraw"></app-word-overlay>
+<app-next-round-overlay *ngIf="nextRoundScreenShown"
+                        [word]="correctlyGuessedWord"
+                        [user]="userThatGuessed"
+                        [nextDrawer]="nextDrawer"></app-next-round-overlay>
