@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
-import {NgForOf, NgIf} from "@angular/common";
+import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
@@ -17,7 +17,8 @@ import confetti from 'canvas-confetti';
     NgForOf,
     NgIf,
     WordOverlayComponent,
-    NextRoundOverlayComponent
+    NextRoundOverlayComponent,
+    KeyValuePipe
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -37,6 +38,8 @@ export class GameComponent implements AfterViewInit{
   wordToDraw: string = '';
   wordOverlayShown: boolean = false;
   wordInHeadShown: boolean = false;
+
+  scores: Map<string, number> = new Map<string, number>();
 
   correctlyGuessedWord: string = '';
   userThatGuessed: string = '';
@@ -81,6 +84,7 @@ export class GameComponent implements AfterViewInit{
         console.log('New game state:', gameState);
         this.clearCanvas();
         this.nextDrawer = gameState.drawerName;
+        this.scores = gameState.playerScores;
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
         this.messages.push(guessEvaluation.guessedCorrectly ?

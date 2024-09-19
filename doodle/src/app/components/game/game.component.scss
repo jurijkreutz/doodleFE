@@ -39,16 +39,27 @@
   width: 20%;
 }
 
-.guess-window {
-  flex-grow: 1;
+.score-window, .guess-window {
+  flex: 1;
   border: 1px solid #ccc;
   padding: 10px;
   background-color: white;
   overflow-y: auto;
+  margin-bottom: 10px;
 
   .head {
     margin-bottom: 0.5rem;
   }
+}
+
+.score-window {
+  height: 40%;
+  flex: 1;
+}
+
+.guess-window {
+  height: 60%;
+  flex: 2;
 }
 
 .guess-chat {
@@ -98,15 +109,16 @@ button:hover {
   border-bottom: 2px solid #ccc;
   font-family: "Fredoka", sans-serif;
   font-weight: 500;
+  font-size: 1.4rem;
 }
 
 .head-left {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #333;
 }
 
 .head-right {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   color: #ef7908;
 }
 

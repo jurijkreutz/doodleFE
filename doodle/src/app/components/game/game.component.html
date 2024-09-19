@@ -10,8 +10,14 @@
         <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
     </div>
     <div class="guess-section">
+      <div class="score-window">
+        <div class="head">Scores</div>
+        <div class="guess-chat" *ngFor="let player of scores | keyvalue">
+          {{player.key}}: {{player.value}}
+        </div>
+      </div>
       <div class="guess-window">
-        <div class="head">Guess Window</div>
+        <div class="head">Guesses</div>
         <div class="guess-chat" *ngFor="let message of messages">
           {{message}}
         </div>
