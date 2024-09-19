@@ -7,6 +7,7 @@ import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
 import {WordToDraw} from "../../models/response.models";
 import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay.component";
 import {filter, Subject, take} from "rxjs";
+import confetti from 'canvas-confetti';
 
 @Component({
   selector: 'app-game',
@@ -44,6 +45,8 @@ export class GameComponent implements AfterViewInit{
 
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
+
+  private readonly NEXT_ROUND_SCREEN_DURAITON = 9000;
 
   private nextRoundScreenSubject = new Subject<boolean>();
 
@@ -84,15 +87,28 @@ export class GameComponent implements AfterViewInit{
           `Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}` :
           `Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
         if (guessEvaluation.guessedCorrectly) {
-          this.isDrawer = false;
-          this.removeCanvasEventListeners();
-          this.wordToDraw = '';
-          this.wordOverlayShown = false;
-          this.wordInHeadShown = false;
-          this.showNextRoundScreen(guessEvaluation.word, guessEvaluation.userThatGuessed);
+          this.handleCorrectGuess(guessEvaluation);
         }
       });
     }
+  }
+
+  private handleCorrectGuess(guessEvaluation: any) {
+    this.isDrawer = false;
+    this.removeCanvasEventListeners();
+    this.wordToDraw = '';
+    this.wordOverlayShown = false;
+    this.wordInHeadShown = false;
+    this.triggerConfetti();
+    this.showNextRoundScreen(guessEvaluation.word, guessEvaluation.userThatGuessed);
+  }
+
+  private triggerConfetti() {
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
   }
 
   private subscribeToWordChannel() {
@@ -109,6 +125,7 @@ export class GameComponent implements AfterViewInit{
     this.nextRoundScreenSubject.next(value);
   }
 
+
   private showNextRoundScreen(guessEvaluation: string, userThatGuessed: string) {
     this.correctlyGuessedWord = guessEvaluation;
     this.userThatGuessed = userThatGuessed;
@@ -118,7 +135,7 @@ export class GameComponent implements AfterViewInit{
       this.correctlyGuessedWord = '';
       this.userThatGuessed = '';
       this.nextDrawer = '';
-    }, 5000);
+    }, this.NEXT_ROUND_SCREEN_DURAITON);
   }
 
   private waitForNextRoundScreenToClose(): Promise<void> {

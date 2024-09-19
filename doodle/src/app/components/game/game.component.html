@@ -4,7 +4,7 @@
       <div class="head">
         <div class="head-left">Drawing Board</div>
         <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">
-          You are drawing the word: <strong>{{ wordToDraw }}</strong>
+          You are drawing the word: <span class="word-to-draw">{{ wordToDraw }}</span>
         </div>
       </div>
         <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
@@ -12,7 +12,7 @@
     <div class="guess-section">
       <div class="guess-window">
         <div class="head">Guess Window</div>
-        <div *ngFor="let message of messages">
+        <div class="guess-chat" *ngFor="let message of messages">
           {{message}}
         </div>
       </div>
