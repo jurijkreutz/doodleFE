@@ -16,7 +16,7 @@
           {{player.key}}: {{player.value}}
         </div>
       </div>
-      <div class="guess-window">
+      <div #scrollMe class="guess-window">
         <div class="head">Guesses</div>
         <div class="guess-chat" *ngFor="let message of messages">
           {{message}}

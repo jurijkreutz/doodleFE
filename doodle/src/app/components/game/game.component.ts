@@ -25,9 +25,11 @@ import confetti from 'canvas-confetti';
 })
 export class GameComponent implements AfterViewInit{
   @ViewChild('drawingCanvas') drawingCanvas!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('scrollMe') myScrollContainer!: ElementRef;
+
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
-  private sendInterval = 100; // ms
+  private sendInterval = 30; // ms
   private drawingEventsBuffer: any[] = [];
 
   lobbyId: string | null = null;
@@ -93,6 +95,7 @@ export class GameComponent implements AfterViewInit{
         if (guessEvaluation.guessedCorrectly) {
           this.handleCorrectGuess(guessEvaluation);
         }
+        setTimeout(() => this.scrollToBottom(), 50);
       });
     }
   }
@@ -274,7 +277,8 @@ export class GameComponent implements AfterViewInit{
       return;
     }
 
-    for (const drawingEvent of drawingEvents) {
+    for (let i = 0; i < drawingEvents.length; i++) {
+      const drawingEvent = drawingEvents[i];
       this.canvasContext.strokeStyle = drawingEvent.color;
       this.canvasContext.lineWidth = drawingEvent.lineWidth;
 
@@ -282,7 +286,17 @@ export class GameComponent implements AfterViewInit{
         this.canvasContext.beginPath();
         this.canvasContext.moveTo(drawingEvent.position.x, drawingEvent.position.y);
       } else if (drawingEvent.type === 'draw') {
-        this.canvasContext.lineTo(drawingEvent.position.x, drawingEvent.position.y);
+        if (i > 0) {
+          const prevEvent = drawingEvents[i - 1];
+          this.canvasContext.quadraticCurveTo(
+            prevEvent.position.x,
+            prevEvent.position.y,
+            drawingEvent.position.x,
+            drawingEvent.position.y
+          );
+        } else {
+          this.canvasContext.lineTo(drawingEvent.position.x, drawingEvent.position.y);
+        }
         this.canvasContext.stroke();
       } else if (drawingEvent.type === 'stop') {
         this.canvasContext.closePath();
@@ -306,5 +320,13 @@ export class GameComponent implements AfterViewInit{
     canvas.removeEventListener('mousemove', this.boundDraw);
     canvas.removeEventListener('mouseup', this.boundStopDrawing);
     canvas.removeEventListener('mouseout', this.boundStopDrawing);
+  }
+
+  scrollToBottom(): void {
+    try {
+      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
+    } catch(err) {
+      console.error('Could not automatically scroll to bottom: ', err);
+    }
   }
 }
