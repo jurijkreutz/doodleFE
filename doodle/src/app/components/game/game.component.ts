@@ -1,13 +1,14 @@
 import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
-import {ActivatedRoute} from "@angular/router";
+import {ActivatedRoute, Router} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
 import {WordToDraw} from "../../models/response.models";
 import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay.component";
 import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
+import {NotificationService} from "../../service/notification.service";
 
 @Component({
   selector: 'app-game',
@@ -47,11 +48,13 @@ export class GameComponent implements AfterViewInit{
   userThatGuessed: string = '';
   nextDrawer: string = '';
   nextRoundScreenShown: boolean = false;
+  isWaitingForServer: boolean = false;
 
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
 
   private readonly NEXT_ROUND_SCREEN_DURAITON = 9000;
+  private countdownInterval: any;
 
   private nextRoundScreenSubject = new Subject<boolean>();
 
@@ -60,7 +63,10 @@ export class GameComponent implements AfterViewInit{
   private boundDraw = this.draw.bind(this);
   private boundStopDrawing = this.stopDrawing.bind(this);
 
-  constructor(private route: ActivatedRoute, private stompService: StompService) {
+  constructor(private route: ActivatedRoute,
+              private stompService: StompService,
+              private notificationService: NotificationService,
+              private router: Router) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
   }
 
@@ -83,31 +89,82 @@ export class GameComponent implements AfterViewInit{
   private subscribeToGame() {
     if (this.lobbyId) {
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
-        console.log('New game state:', gameState);
         this.clearCanvas();
         this.nextDrawer = gameState.drawerName;
         this.scores = gameState.playerScores;
+        let roundTime: number = gameState.roundTime;
+        this.handleCountdown(roundTime);
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
-        this.messages.push(guessEvaluation.guessedCorrectly ?
-          `Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}` :
-          `Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
-        if (guessEvaluation.guessedCorrectly) {
+        this.isWaitingForServer = false;
+        if (guessEvaluation.status == "correctly") {
+          this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}`);
+        } else if (guessEvaluation.status == "incorrectly") {
+          this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
+        }
+        if (guessEvaluation.status == "correctly") {
           this.handleCorrectGuess(guessEvaluation);
+        } else if (guessEvaluation.status == "timeout") {
+          this.showNextRoundScreen(guessEvaluation.word, `Oops! Time is up. The word was:`);
+          this.resetEnvironment();
         }
         setTimeout(() => this.scrollToBottom(), 50);
       });
     }
   }
 
+  private handleCountdown(roundTime: number) {
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    this.countdownInterval = setInterval(() => {
+      if (roundTime > 0) {
+        console.log('Round time:', --roundTime);
+      } else {
+        this.isWaitingForServer = true;
+        clearInterval(this.countdownInterval);
+        console.log('Time is up!');
+        this.handleServerTimeout();
+      }
+    }, 1000);
+  }
+
+  private handleServerTimeout() {
+    const delay = 10000;
+    if (this.countdownInterval) {
+      clearInterval(this.countdownInterval);
+    }
+    setTimeout(() => {
+      if (this.isWaitingForServer) {
+        const message1 = 'Hm... Looks like there is a problem. Waiting for another 5 seconds...'
+        this.notificationService.showError(message1);
+      }
+      setTimeout(() => {
+        if (this.isWaitingForServer) {
+          const message2 = 'We have a problem with the connection. Redirecting to start...';
+          this.notificationService.showAsyncError(message2)
+            .then(() => {
+              this.router.navigate(['/']);
+            });
+        }
+      }, delay);
+    }, delay);
+  }
+
   private handleCorrectGuess(guessEvaluation: any) {
+    this.resetEnvironment();
+    this.triggerConfetti();
+    this.showNextRoundScreen(
+      guessEvaluation.word,
+      `${guessEvaluation.userThatGuessed} has guessed correctly. The word was:`);
+  }
+
+  private resetEnvironment() {
     this.isDrawer = false;
     this.removeCanvasEventListeners();
     this.wordToDraw = '';
     this.wordOverlayShown = false;
     this.wordInHeadShown = false;
-    this.triggerConfetti();
-    this.showNextRoundScreen(guessEvaluation.word, guessEvaluation.userThatGuessed);
   }
 
   private triggerConfetti() {
