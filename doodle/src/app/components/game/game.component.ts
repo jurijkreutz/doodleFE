@@ -30,7 +30,7 @@ export class GameComponent implements AfterViewInit{
 
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
-  private sendInterval = 30; // ms
+  private sendInterval = 10; // ms
   private drawingEventsBuffer: any[] = [];
 
   lobbyId: string | null = null;
@@ -302,7 +302,7 @@ export class GameComponent implements AfterViewInit{
     if (!this.isDrawing) return;
     this.isDrawing = false;
     this.canvasContext.closePath();
-    this.addDrawingEventToBuffer('stop', null); // Add to buffer
+    this.addDrawingEventToBuffer('stop', null);
   }
 
   private addDrawingEventToBuffer(type: string, pos: { x: number; y: number } | null) {
@@ -333,12 +333,10 @@ export class GameComponent implements AfterViewInit{
       console.error('Canvas context is not initialized');
       return;
     }
-
     for (let i = 0; i < drawingEvents.length; i++) {
       const drawingEvent = drawingEvents[i];
       this.canvasContext.strokeStyle = drawingEvent.color;
       this.canvasContext.lineWidth = drawingEvent.lineWidth;
-
       if (drawingEvent.type === 'start') {
         this.canvasContext.beginPath();
         this.canvasContext.moveTo(drawingEvent.position.x, drawingEvent.position.y);
