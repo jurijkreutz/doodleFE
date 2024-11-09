@@ -5,6 +5,7 @@ import {map, Observable} from "rxjs";
 import {NotificationService} from "../notification.service";
 import {Router} from "@angular/router";
 import {WordToDraw} from "../../models/response.models";
+import {environment} from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
@@ -21,7 +22,7 @@ export class StompService {
 
   private configureStomp() {
     const config: RxStompConfig = {
-      brokerURL: 'ws://localhost:8080/native-ws',
+      brokerURL: environment.WEBSOCKET_URL,
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
       reconnectDelay: 200,

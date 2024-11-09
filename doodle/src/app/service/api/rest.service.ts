@@ -2,12 +2,13 @@ import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpParams} from "@angular/common/http";
 import {catchError, Observable, throwError} from "rxjs";
 import {IsOwnerResponse, JoinLobbyResponse} from "../../models/response.models";
+import {environment} from "../../../environments/environment";
 
 @Injectable({
   providedIn: 'root'
 })
 export class RestService {
-  private readonly REST_URL = 'http://localhost:8080';
+  private readonly REST_URL = environment.REST_URL;
 
   constructor(private http: HttpClient) { }
 
