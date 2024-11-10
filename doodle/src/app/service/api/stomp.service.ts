@@ -22,9 +22,9 @@ export class StompService {
 
   private configureStomp() {
     const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const host = window.location.hostname;
-    const path = environment.WEBSOCKET_URL;
-    const brokerURL = `${protocol}${host}${path}`;
+    const hostname = window.location.hostname;
+    const port = window.location.port ? `:${window.location.port}` : '';
+    const brokerURL = `${protocol}${hostname}${port}${environment.WEBSOCKET_URL}`;
     const config: RxStompConfig = {
       brokerURL: brokerURL,
       heartbeatIncoming: 0,
