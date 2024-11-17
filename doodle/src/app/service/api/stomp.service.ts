@@ -21,10 +21,15 @@ export class StompService {
   }
 
   private configureStomp() {
-    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-    const hostname = window.location.hostname;
-    const port = window.location.port ? `:${window.location.port}` : '';
-    const brokerURL = `${protocol}${hostname}${port}${environment.WEBSOCKET_URL}`;
+    let brokerURL = '';
+    if (environment.production) {
+      const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const hostname = window.location.hostname;
+      const port = window.location.port ? `:${window.location.port}` : '';
+      brokerURL = `${protocol}${hostname}${port}${environment.WEBSOCKET_URL}`;
+    } else {
+      brokerURL = environment.WEBSOCKET_URL;
+    }
     const config: RxStompConfig = {
       brokerURL: brokerURL,
       heartbeatIncoming: 0,
