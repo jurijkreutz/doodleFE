@@ -6,7 +6,7 @@
   </div>
   <div class="menu-block">
     <h2>Join a Lobby with Code</h2>
-    <input [(ngModel)]="lobbyCode" placeholder="Enter code">
+    <input [(ngModel)]="lobbyCode" placeholder="Enter code" (keydown.enter)="joinLobby()">
     <button (click)="joinLobby()">Join Lobby</button>
   </div>
 </div>

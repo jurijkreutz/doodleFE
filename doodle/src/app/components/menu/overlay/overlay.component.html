@@ -1,7 +1,7 @@
 <div class="overlay-container fade-in">
   <div class="overlay-block">
     <h2>Enter your name to start doodling</h2>
-    <input [(ngModel)]="userName" placeholder="Enter name">
+    <input [(ngModel)]="userName" placeholder="Enter name" (keydown.enter)="onNameEnter()">
     <button (click)="onNameEnter()">Enter</button>
   </div>
 </div>
