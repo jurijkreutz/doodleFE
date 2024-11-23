@@ -65,9 +65,15 @@ export class LobbyComponent implements AfterViewInit {
 
   copyToClipboard() {
     if (typeof this.lobbyId === "string") {
-      navigator.clipboard.writeText(this.lobbyId).then(() => {
-        this.copiedCodeToClipboard = true;
-      });
+      alert(this.lobbyId);
+      if(navigator.clipboard) {
+        navigator.clipboard.writeText(this.lobbyId).then(() => {
+          this.copiedCodeToClipboard = true;
+        });
+      }
+      else{
+        alert('Copy this code and send it to others: ' + this.lobbyId);
+      }
     }
   }
 
