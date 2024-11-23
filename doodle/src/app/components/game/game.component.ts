@@ -119,9 +119,12 @@ export class GameComponent implements AfterViewInit{
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
+    const totalDuration = roundTime;
+    const progressBar = document.getElementById('progress-bar') as HTMLElement;
     this.countdownInterval = setInterval(() => {
       if (roundTime > 0) {
-        console.log('Round time:', --roundTime);
+        roundTime--;
+        this.updateProgressBar(roundTime, totalDuration, progressBar);
       } else {
         this.isWaitingForServer = true;
         clearInterval(this.countdownInterval);
@@ -129,6 +132,31 @@ export class GameComponent implements AfterViewInit{
         this.handleServerTimeout();
       }
     }, 1000);
+  }
+
+  private updateProgressBar(roundTime: number, totalDuration: number, progressBar: HTMLElement) {
+    const progressPercentage = (roundTime / totalDuration) * 100;
+    if (progressBar) {
+      progressBar.style.width = `${progressPercentage}%`;
+      switch (true) {
+        case (progressPercentage > 50):
+          progressBar.style.backgroundColor = '#4caf50';
+          progressBar.classList.remove('pulsate');
+          break;
+        case (progressPercentage > 30):
+          progressBar.style.backgroundColor = '#af824c';
+          break;
+        case (progressPercentage > 20):
+          progressBar.style.backgroundColor = '#af4c79';
+          break;
+        default:
+          progressBar.style.backgroundColor = '#e32e2e';
+          if (!progressBar.classList.contains('pulsate')) {
+            progressBar.classList.add('pulsate');
+          }
+      }
+    }
+    console.log('Round time:', roundTime);
   }
 
   private handleServerTimeout() {

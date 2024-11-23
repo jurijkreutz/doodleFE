@@ -153,3 +153,34 @@ button:hover {
   border: 2px solid #000;
 }
 
+@keyframes pulsate {
+  0% {
+    box-shadow: 0 0 10px 2px rgba(227, 46, 46, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px 5px rgba(227, 46, 46, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 10px 2px rgba(227, 46, 46, 0.5);
+  }
+}
+
+#progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background-color: #ddd;
+  margin-top: -5px;
+  position: relative;
+  overflow: visible;
+}
+
+#progress-bar {
+  width: 100%;
+  height: 100%;
+  background-color: #4caf50;
+  transition: width 1s linear, background-color 1s ease;
+}
+
+.pulsate {
+  animation: pulsate 1s infinite;
+}
