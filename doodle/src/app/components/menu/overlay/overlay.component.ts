@@ -13,7 +13,8 @@ import {HeartbeatService} from "../../../service/heartbeat.service";
 })
 export class OverlayComponent implements OnInit {
   @Output() nameEntered = new EventEmitter<string>();
-  userName: string = "";
+  protected userName: string = "";
+  protected maxNameLength: number = 20;
 
   private heartBeatService: HeartbeatService;
 

@@ -33,6 +33,8 @@ export class GameComponent implements AfterViewInit{
   private sendInterval = 10; // ms
   private drawingEventsBuffer: any[] = [];
 
+  protected maxGuessLength: number = 30;
+
   lobbyId: string | null = null;
   messages: string[] = [];
   messageContent: string = '';

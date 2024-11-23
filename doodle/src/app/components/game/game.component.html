@@ -24,7 +24,8 @@
       </div>
       <div class="controls">
         <div *ngIf="!isDrawer" class="guess-input">
-          <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess" (keydown.enter)="sendGuess()">
+          <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess" (keydown.enter)="sendGuess()"
+          [attr.maxlength]="maxGuessLength">
           <button (click)="sendGuess()">Send</button>
         </div>
         <div *ngIf="isDrawer" class="color-picker">

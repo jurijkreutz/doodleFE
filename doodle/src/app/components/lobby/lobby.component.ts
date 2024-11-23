@@ -23,6 +23,7 @@ export class LobbyComponent implements AfterViewInit {
   protected playerList: string[];
   protected messages: any[] = [];
   protected messageContent: string = '';
+  protected maxMessageLength: number = 100;
 
   @ViewChild('scrollMe') myScrollContainer!: ElementRef;
 
