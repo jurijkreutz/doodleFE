@@ -50,7 +50,7 @@ h3 {
   width: 0;
   height: 100%;
   background-color: #4caf50;
-  animation: fillBar 9s linear forwards;
+  animation: fillBar 5s linear forwards; // only change this time value if you change screen overlay duration as well
 }
 
 @keyframes fillBar {

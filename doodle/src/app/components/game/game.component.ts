@@ -39,6 +39,7 @@ export class GameComponent implements AfterViewInit{
   messages: string[] = [];
   messageContent: string = '';
 
+  isFirstRound: boolean = true;
   isDrawer: boolean = false;
   wordToDraw: string = '';
   wordOverlayShown: boolean = false;
@@ -55,8 +56,10 @@ export class GameComponent implements AfterViewInit{
   colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
   selectedColor: string = '#000000';
 
-  private readonly NEXT_ROUND_SCREEN_DURAITON = 9000;
+  private readonly SCREEN_OVERLAY_DURATION_SECONDS = 5; // only change this value if you change in backend as well
+
   private countdownInterval: any;
+  private countdownTimeout: any;
 
   private nextRoundScreenSubject = new Subject<boolean>();
 
@@ -116,22 +119,37 @@ export class GameComponent implements AfterViewInit{
   }
 
   private handleCountdown(roundTime: number) {
+    this.clearTimeoutAndInterval();
+    let pureRoundTime = roundTime -
+      (this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS : this.SCREEN_OVERLAY_DURATION_SECONDS * 2);
+    const totalDuration = pureRoundTime;
+    const progressBar = document.getElementById('progress-bar') as HTMLElement;
+    this.resetProgressBar(progressBar);
+    const screenOverlayWaitTime =
+      this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 : this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 * 2;
+    this.countdownTimeout = setTimeout(() => {
+      this.countdownInterval = setInterval(() => {
+        this.isFirstRound = false;
+        if (pureRoundTime > 0) {
+          pureRoundTime--;
+          this.updateProgressBar(pureRoundTime, totalDuration, progressBar);
+        } else {
+          this.isWaitingForServer = true;
+          clearInterval(this.countdownInterval);
+          console.log('Time is up!');
+          this.handleServerTimeout();
+        }
+      }, 1000);
+    }, screenOverlayWaitTime);
+  }
+
+  private clearTimeoutAndInterval() {
     if (this.countdownInterval) {
       clearInterval(this.countdownInterval);
     }
-    const totalDuration = roundTime;
-    const progressBar = document.getElementById('progress-bar') as HTMLElement;
-    this.countdownInterval = setInterval(() => {
-      if (roundTime > 0) {
-        roundTime--;
-        this.updateProgressBar(roundTime, totalDuration, progressBar);
-      } else {
-        this.isWaitingForServer = true;
-        clearInterval(this.countdownInterval);
-        console.log('Time is up!');
-        this.handleServerTimeout();
-      }
-    }, 1000);
+    if (this.countdownTimeout) {
+      clearTimeout(this.countdownTimeout);
+    }
   }
 
   private updateProgressBar(roundTime: number, totalDuration: number, progressBar: HTMLElement) {
@@ -157,6 +175,14 @@ export class GameComponent implements AfterViewInit{
       }
     }
     console.log('Round time:', roundTime);
+  }
+
+  private resetProgressBar(progressBar: HTMLElement) {
+    if (progressBar) {
+      progressBar.style.width = '100%';
+      progressBar.style.backgroundColor = '#4caf50';
+      progressBar.classList.remove('pulsate');
+    }
   }
 
   private handleServerTimeout() {
@@ -229,7 +255,7 @@ export class GameComponent implements AfterViewInit{
       this.correctlyGuessedWord = '';
       this.userThatGuessed = '';
       this.nextDrawer = '';
-    }, this.NEXT_ROUND_SCREEN_DURAITON);
+    }, this.SCREEN_OVERLAY_DURATION_SECONDS * 1000);
   }
 
   private waitForNextRoundScreenToClose(): Promise<void> {
