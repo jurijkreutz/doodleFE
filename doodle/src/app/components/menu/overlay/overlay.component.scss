@@ -7,11 +7,11 @@
   position: fixed;
   top: 0;
   left: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.8);
+  z-index: 2;
 }
 
 .overlay-block {
-  background-color: white;
   font-weight: 500;
   padding: 20px;
   display: flex;
@@ -21,16 +21,27 @@
   font-family: "Fredoka", sans-serif;
   font-size: 20px;
   width: 50vw;
+  border-radius: 16px;
+  border: 1px solid #E0E0E0;
+  box-shadow: 2px 3px 17px 20px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  background-color: #FFFFFF;
 
   h2 {
     font-weight: 500;
   }
 }
 
+.overlay-block:hover {
+  transition: box-shadow 0.2s ease-in-out;
+  box-shadow: 2px 3px 20px 9px rgb(255 255 255 / 10%), 0 2px 4px rgb(255 255 255 / 6%);
+}
+
 button {
-  background-color: #4CAF50;
+  background: linear-gradient(40deg, #f8a5b6, #b1cfde);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
   border: none;
-  color: white;
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -44,7 +55,10 @@ button {
 }
 
 button:hover {
-  background-color: #45a049;
+  background: linear-gradient(40deg, #FF69B4, #87CEEB);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+  color: white;
 }
 
 input {

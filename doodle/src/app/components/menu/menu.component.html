@@ -2,7 +2,7 @@
 <div class="menu-container">
   <div class="menu-block">
     <h2>Create a New Lobby</h2>
-    <button (click)="createLobby()">Start</button>
+    <button (click)="createLobby()" class="big-button">Start</button>
   </div>
   <div class="menu-block">
     <h2>Join a Lobby with Code</h2>
@@ -10,3 +10,18 @@
     <button (click)="joinLobby()">Join Lobby</button>
   </div>
 </div>
+<div class="game-info-box">
+  <h3>About The Game</h3>
+  <p>
+    SketchOff is a fun and competitive drawing game.
+    <br>Create a lobby or join one to compete by drawing prompts, guessing what others are drawing & scoring points to win!
+    <br>Start by creating a new lobby or joining an existing one with a code from your co-players!
+  </p>
+</div>
+<!-- Design elements -->
+<img src="assets/leaf-1.png" alt="Leaf" class="left-asset-top" [ngClass]="menuContainerClass">
+<img src="assets/leaf-2.png" alt="Leaf" class="left-asset-middle" [ngClass]="menuContainerClass">
+<img src="assets/pinsel.png" alt="Brush" class="left-asset-bottom" [ngClass]="menuContainerClass">
+<img src="assets/leaf-3.png" alt="Brush" class="left-asset-complete-bottom" [ngClass]="menuContainerClass">
+<img src="assets/leaves-right-bottom.png" alt="Leaf" class="right-asset" [ngClass]="menuContainerClass">
+<img src="assets/leaves-right-top.png" alt="Leaf" class="right-asset-top" [ngClass]="menuContainerClass">

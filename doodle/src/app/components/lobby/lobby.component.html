@@ -2,7 +2,7 @@
   <div class="upper-container">
     <div class="chat-section">
       <div class="chat-window" #scrollMe>
-        <div class="head">Chat Window</div>
+        <div class="head">Chat</div>
         <div *ngFor="let message of messages">
           <div *ngIf="message.type === 'JOIN'" class="event-message">
             {{message.sender}} joined!
@@ -11,7 +11,7 @@
             {{message.sender}} left!
           </div>
           <div *ngIf="message.type === 'CHAT'" class="chat-message">
-            <strong>{{message.sender}}: </strong>{{message.content}}
+            <span class="sender">{{message.sender}}:</span> {{message.content}}
           </div>
         </div>
       </div>
@@ -21,7 +21,7 @@
       </div>
     </div>
     <div class="player-list">
-      <div class="head">Player List</div>
+      <div class="head">Players</div>
       <div *ngFor="let player of playerList; index as i;">
         <span>{{ player }}</span>
       </div>
@@ -33,5 +33,13 @@
   </div>
   <span *ngIf="!copiedCodeToClipboard" class="hint">Tip: Click on the code to copy & share it with your co-players!</span>
   <span *ngIf="copiedCodeToClipboard" class="hint">Copied lobby code to clipboard. Share it now!</span>
+</div>
+<div class="game-info-box">
+  <h3>How To Play</h3>
+  <p>
+    The game is round-based. Each round, one player is the drawer and the others are the guessers.
+    <br>You get <u>one point</u> for guessing correctly.
+    <br>The drawer looses one point when no one guesses correctly.
+  </p>
 </div>
 

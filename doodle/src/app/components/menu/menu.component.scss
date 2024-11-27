@@ -3,28 +3,69 @@
   justify-content: space-between;
   align-items: center;
   height: 300px;
-  width: 70vw;
+  width: 50vw;
   margin-left: auto;
   margin-right: auto;
   margin-top: 30px;
-  gap: 20px;
+  gap: 30px;
+  padding-top: 10px;
+}
+
+@media (max-width: 1600px) {
+  .menu-container {
+    width: 70vw;
+  }
 }
 
 .menu-block {
   flex: 1;
-  padding: 20px 20px 40px;
+  padding: 25px 20px 40px;
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-direction: column;
   font-family: "Fredoka", sans-serif;
   font-size: 20px;
   text-align: center;
-  background-color: rgb(255 255 255 / 71%);
   align-self: stretch;
+  border-radius: 16px;
+  border: 1px solid #E0E0E0;
+  box-shadow: 2px 3px 17px 20px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  background-color: #FFFFFF;
 
   h2 {
     font-weight: 500;
+  }
+}
+
+.game-info-box {
+  margin-top: 30px;
+  padding: 20px 30px;
+  width: 50vw;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: "Fredoka", sans-serif;
+  color: #ffffff;
+  text-align: center;
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.game-info-box h3 {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: #ffffff;
+}
+
+.game-info-box p {
+  font-size: 18px;
+  line-height: 1.6;
+  margin: 10px 0;
+  color: #ffffff;
+}
+
+@media (max-width: 1600px) {
+  .game-info-box {
+    width: 70vw;
   }
 }
 
@@ -35,9 +76,11 @@
 }
 
 button {
-  background-color: #4CAF50;
+  background: linear-gradient(40deg, #f8a5b6, #b1cfde);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
   border: none;
-  color: white;
   text-align: center;
   text-decoration: none;
   display: inline-block;
@@ -49,8 +92,16 @@ button {
   border-radius: 12px;
 }
 
+.big-button {
+  padding: 25px 45px;
+  font-size: 60px;
+}
+
 button:hover {
-  background-color: #45a049;
+  background: linear-gradient(40deg, #FF69B4, #87CEEB);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+  color: white;
 }
 
 input {
@@ -60,4 +111,82 @@ input {
   box-sizing: border-box;
   border: 2px solid #ccc;
   border-radius: 4px;
+}
+
+// CSS for edge design elements on main page
+
+%left-asset {
+  position: fixed;
+  left: -25px;
+  z-index: 1;
+}
+
+.left-asset-top {
+  @extend %left-asset;
+  top: calc(25vh - 100px);
+  width: 200px;
+  animation: sway-right 5s infinite ease-in-out;
+}
+
+.left-asset-middle {
+  @extend %left-asset;
+  top: calc(48vh - 100px);
+  width: 200px;
+  animation: sway-left 6s infinite ease-in-out;
+}
+
+.left-asset-bottom {
+  @extend %left-asset;
+  top: calc(50vh - 100px);
+  width: 280px;
+}
+
+.left-asset-complete-bottom {
+  @extend %left-asset;
+  position: fixed;
+  bottom: -50px;
+  width: 230px;
+  animation: sway-right 6s infinite ease-in-out;
+}
+
+.right-asset {
+  position: fixed;
+  right: -65px;
+  bottom: -55px;
+  width: 350px;
+  z-index: 1;
+  animation: sway-right-minimal 6s infinite ease-in-out;
+}
+
+.right-asset-top {
+  position: fixed;
+  right: -65px;
+  top: -40px;
+  width: 300px;
+  z-index: 1;
+  animation: sway-right 6s infinite ease-in-out;
+}
+
+
+@keyframes sway-right {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(3deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes sway-left {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(-3deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes sway-right-minimal {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.fade-out {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
 }

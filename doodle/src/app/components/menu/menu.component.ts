@@ -2,7 +2,7 @@ import {Component} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {RestService} from "../../service/api/rest.service";
 import {OverlayComponent} from "./overlay/overlay.component";
-import {NgIf} from "@angular/common";
+import {NgClass, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
 import {JoinLobbyResponse} from "../../models/response.models";
 import {HttpErrorResponse} from "@angular/common/http";
@@ -16,7 +16,8 @@ import {StompService} from "../../service/api/stomp.service";
   imports: [
     FormsModule,
     OverlayComponent,
-    NgIf
+    NgIf,
+    NgClass
   ],
   templateUrl: './menu.component.html',
   styleUrl: './menu.component.scss'
@@ -42,13 +43,17 @@ export class MenuComponent {
   }
 
   lobbyCode: string = "";
+  menuContainerClass: string = '';
 
   createLobby() {
     this.restService.sendCreateLobbyRequest().subscribe(
       (response: JoinLobbyResponse) => {
-        this.router.navigate(['/lobby/' + response.id], {
-          state: { players: response.players }
-        });
+        this.triggerFadeOut();
+        setTimeout(() => {
+          this.router.navigate(['/lobby/' + response.id], {
+            state: { players: response.players }
+          });
+        }, 300);
       },
       (error: HttpErrorResponse) => {
         console.error('Error creating lobby: ', error.message);
@@ -60,8 +65,11 @@ export class MenuComponent {
   joinLobby() {
     this.restService.sendJoinLobbyRequest(this.lobbyCode).subscribe(
       (response: JoinLobbyResponse) => {
+        this.triggerFadeOut();
+        setTimeout(() => {
         this.router.navigate(['/lobby/' + response.id],
           { state: { players: response.players } });
+        }, 300);
       },
       (error: HttpErrorResponse) => {
         console.error('Error joining lobby: ', error.message);
@@ -89,5 +97,7 @@ export class MenuComponent {
     );
   }
 
-
+  private triggerFadeOut() {
+    this.menuContainerClass = 'fade-out';
+  }
 }

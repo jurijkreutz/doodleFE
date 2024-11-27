@@ -4,10 +4,11 @@
   width: 90vw;
   margin: 20px auto;
   font-family: "Fredoka", monospace;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
   font-size: 1.5em;
+  border-radius: 16px;
+  border: 1px solid #E0E0E0;
+  box-shadow: 2px 3px 17px 20px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  background-color: #FFFFFF;
 }
 
 .upper-container {
@@ -18,7 +19,6 @@
 
 .drawing-board {
   flex-grow: 6;
-  border: 1px solid #ccc;
   padding: 10px;
   margin: 10px 0 10px 10px;
   background-color: white;
@@ -42,6 +42,7 @@
 .score-window, .guess-window {
   flex: 1;
   border: 1px solid #ccc;
+  border-radius: 16px;
   padding: 10px;
   background-color: white;
   overflow-y: auto;
@@ -76,7 +77,6 @@
   display: flex;
   padding: 10px;
   background: #fff;
-  border-top: 1px solid #ddd;
 }
 
 input {
@@ -105,8 +105,8 @@ button:hover {
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background-color: #f5f5f5;
-  border-bottom: 2px solid #ccc;
+  background-color: #fafafa;
+  border-bottom: 2px solid #fafafa;
   font-family: "Fredoka", sans-serif;
   font-weight: 500;
   font-size: 1.4rem;
@@ -119,12 +119,12 @@ button:hover {
 
 .head-right {
   font-size: 1.4rem;
-  color: #ef7908;
+  color: #658ac4;
 }
 
 .head-right .word-to-draw {
-  color: #d9534f;
-  font-weight: 600;
+  color: #f497b1;
+  font-weight: 500;
 }
 
 .chat-message {
@@ -137,7 +137,6 @@ button:hover {
   justify-content: center;
   padding: 10px;
   background: #fff;
-  border-top: 1px solid #ddd;
 }
 
 .color-picker button {

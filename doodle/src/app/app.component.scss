@@ -4,22 +4,28 @@
   width: 320px;
 }
 
+.doodle-logo-start {
+  display: block;
+  margin: 40px auto 40px;
+  width: 500px;
+}
+
 .main-content {
   margin: 0 30px 30px;
 }
 
 .footer {
   position: absolute;
-  bottom: 10px;
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #396fda;
+  background-color: rgba(255, 255, 255, 0.4);
   border-radius: 8px;
   font-family: "Rubik", sans-serif;
   text-align: center;
   padding: 0 10px;
   white-space: nowrap;
   font-size: 0.9rem;
-  color: white;
+  color: #000000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

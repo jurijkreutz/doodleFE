@@ -1,4 +1,5 @@
-<img src="assets/doodl.webp" alt="Doodle Logo" class="doodle-logo">
+<img *ngIf="isStart" src="assets/logo_sketchoff_650_t.png" alt="Doodle Logo" class="doodle-logo-start">
+<img *ngIf="!isStart" src="assets/logo_sketchoff_500_t_ns.png" alt="Doodle Logo" class="doodle-logo">
 <div class="main-content">
   <router-outlet></router-outlet>
 </div>
