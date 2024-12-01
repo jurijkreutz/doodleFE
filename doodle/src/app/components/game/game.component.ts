@@ -36,6 +36,8 @@ export class GameComponent implements AfterViewInit{
   protected maxGuessLength: number = 30;
 
   isOwner: boolean = false;
+  selectedSpeed: string = '';
+
   isWaitingForGameStart: boolean = true;
   lobbyId: string | null = null;
   messages: string[] = [];
@@ -76,6 +78,8 @@ export class GameComponent implements AfterViewInit{
               private router: Router) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
     this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
+    this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'];
+    this.redirectToStartOnGameStartTimeOut();
   }
 
   ngAfterViewInit() {
@@ -83,7 +87,7 @@ export class GameComponent implements AfterViewInit{
     this.prepareDrawingEnv(false);
     this.subscribeToWordChannel();
     if (this.isOwner) {
-      this.stompService.sendStartGame(this.lobbyId);
+      this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed);
     }
     this.initializeDrawingEventSender();
   }
@@ -439,11 +443,22 @@ export class GameComponent implements AfterViewInit{
     canvas.removeEventListener('mouseout', this.boundStopDrawing);
   }
 
-  scrollToBottom(): void {
+  protected scrollToBottom(): void {
     try {
       this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
     } catch(err) {
       console.error('Could not automatically scroll to bottom: ', err);
     }
+  }
+
+  private redirectToStartOnGameStartTimeOut() {
+    setTimeout(() => {
+      if (this.isWaitingForGameStart) {
+        this.notificationService.showAsyncError('Game has not started in time. Redirecting to start...')
+          .then(() => {
+            this.router.navigate(['/']);
+          });
+      }
+    }, 20000);
   }
 }

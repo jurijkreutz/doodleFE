@@ -103,13 +103,17 @@ export class StompService {
     });
   }
 
-  public sendStartGame(lobbyId: string | null) {
+  public sendUpdateSpeed(lobbyId: string, message: any) {
+    this.rxStomp.publish({ destination: `/app/chat.changeSpeed/${lobbyId}`, body: JSON.stringify(message) });
+  }
+
+  public sendStartGame(lobbyId: string | null, speed: string) {
     if (!lobbyId) {
       console.error('Lobby ID is null or undefined');
       return;
     }
     this.rxStomp.publish({ destination: `/app/chat.startGame/${lobbyId}`, body: '{}' });
-    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: '{}' });
+    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: JSON.stringify({ speed: speed }) });
   }
 
   public subscribeToGuessNotification(lobbyId: string, callback: (message: any) => void) {

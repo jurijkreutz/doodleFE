@@ -24,6 +24,7 @@ export class LobbyComponent implements AfterViewInit {
   protected messages: any[] = [];
   protected messageContent: string = '';
   protected maxMessageLength: number = 100;
+  protected selectedSpeed: string = 'rapid';
 
   @ViewChild('scrollMe') myScrollContainer!: ElementRef;
 
@@ -44,11 +45,28 @@ export class LobbyComponent implements AfterViewInit {
           this.router.navigate(['/game/' + this.lobbyId], {
             state: { isOwner: false }
           });
+        } else if (message.sender === 'server-c4fbc994-7b44-4193-8a6d-c39d365eead6' && message.content.startsWith('change-speed:')) {
+          this.selectedSpeed = message.content.split(':')[1];
         } else {
           this.messages.push(message);
           setTimeout(() => this.scrollToBottom(), 50);
         }
       });
+    }
+  }
+
+  protected onSpeedChange(newSpeed: string) {
+    console.log('Speed changed to:', newSpeed);
+    this.handleSpeedChange(newSpeed);
+  }
+
+  private handleSpeedChange(newSpeed: string) {
+    const chatMessage = {
+      content: newSpeed,
+      type: 'CHAT'
+    };
+    if (typeof this.lobbyId === "string") {
+      this.stompService.sendUpdateSpeed(this.lobbyId, chatMessage);
     }
   }
 
@@ -81,7 +99,7 @@ export class LobbyComponent implements AfterViewInit {
 
   startGame() {
     this.router.navigate(['/game/' + this.lobbyId],
-      {state: { isOwner: true }}
+      {state: { isOwner: true, speed: this.selectedSpeed }}
     );
   }
 
