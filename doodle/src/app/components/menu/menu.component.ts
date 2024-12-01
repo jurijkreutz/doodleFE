@@ -51,7 +51,7 @@ export class MenuComponent {
         this.triggerFadeOut();
         setTimeout(() => {
           this.router.navigate(['/lobby/' + response.id], {
-            state: { players: response.players }
+            state: { players: response.players, isOwner: true }
           });
         }, 300);
       },

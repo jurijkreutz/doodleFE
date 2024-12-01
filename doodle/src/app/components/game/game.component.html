@@ -10,7 +10,12 @@
         <div id="progress-bar-container">
           <div id="progress-bar"></div>
         </div>
-        <canvas #drawingCanvas id="drawingCanvas" width="800" height="600"></canvas>
+      <div class="waiting-for-start-box" *ngIf="isWaitingForGameStart">
+        Waiting for all users to be ready...
+        <div class="loader"></div>
+      </div>
+        <canvas #drawingCanvas id="drawingCanvas" width="800" height="600">
+        </canvas>
     </div>
     <div class="guess-section">
       <div class="score-window">

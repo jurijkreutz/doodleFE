@@ -21,7 +21,7 @@ export class StompService {
   }
 
   private configureStomp() {
-    let brokerURL = '';
+    let brokerURL: string;
     if (environment.production) {
       const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
       const hostname = window.location.hostname;
@@ -90,7 +90,9 @@ export class StompService {
         console.error('Error subscribing to game state updates in lobby ' + lobbyId, err);
       },
       complete: () => {}
-    });
+    })
+    this.isGameStateSubscribed = true;
+    this.checkAndSendReady(lobbyId);
   }
 
   public sendGuess(lobbyId: string, guess: string) {
@@ -119,6 +121,8 @@ export class StompService {
         console.error('Error subscribing to game notifications', err);
       }
     });
+    this.isGuessNotificationSubscribed = true;
+    this.checkAndSendReady(lobbyId);
   }
 
   public subscribeToDrawingEvents(lobbyId: string, callback: (drawingEvents: any[]) => void) {
@@ -147,13 +151,40 @@ export class StompService {
 
   private subscribeToErrors() {
     this.errorMessages().subscribe(message => {
-      console.error('Error from server:', message);
-      this.notificationService.showAsyncError(message + ' Redirecting to start...')
+      let displayMessage = message;
+      displayMessage = this.parseJson(message, displayMessage);
+      console.error('Error from server:', displayMessage);
+      this.notificationService.showAsyncError(displayMessage + ' Redirecting to start...')
         .then(() => {
           this.router.navigate(['/']);
         });
     });
   }
 
+  private parseJson(message: string, displayMessage: string) {
+    try {
+      const parsedMessage = JSON.parse(message);
+      if (parsedMessage && parsedMessage.message) {
+        displayMessage = parsedMessage.message;
+      }
+    } catch (e) {
+      console.error('Error parsing message:', e);
+    }
+    return displayMessage;
+  }
 
+  private isGameStateSubscribed: boolean = false;
+  private isGuessNotificationSubscribed: boolean = false;
+
+  private checkAndSendReady(lobbyId: string) {
+    if (this.isGameStateSubscribed && this.isGuessNotificationSubscribed) {
+      this.sendReadyMessage(lobbyId);
+      this.isGameStateSubscribed = false;
+      this.isGuessNotificationSubscribed = false;
+    }
+  }
+
+  private sendReadyMessage(lobbyId: string) {
+    this.rxStomp.publish({ destination: `/app/game-state.ready/${lobbyId}`, body: '{}' });
+  }
 }

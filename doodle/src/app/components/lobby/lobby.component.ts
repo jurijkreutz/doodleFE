@@ -41,7 +41,9 @@ export class LobbyComponent implements AfterViewInit {
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
         if (message.sender === 'server-c4fbc994-7b44-4193-8a6d-c39d365eead6' && message.content === 'start-game') {
-          this.router.navigate(['/game/' + this.lobbyId]);
+          this.router.navigate(['/game/' + this.lobbyId], {
+            state: { isOwner: false }
+          });
         } else {
           this.messages.push(message);
           setTimeout(() => this.scrollToBottom(), 50);
@@ -78,7 +80,9 @@ export class LobbyComponent implements AfterViewInit {
   }
 
   startGame() {
-    this.router.navigate(['/game/' + this.lobbyId]);
+    this.router.navigate(['/game/' + this.lobbyId],
+      {state: { isOwner: true }}
+    );
   }
 
   scrollToBottom(): void {

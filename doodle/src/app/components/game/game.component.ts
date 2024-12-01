@@ -35,6 +35,8 @@ export class GameComponent implements AfterViewInit{
 
   protected maxGuessLength: number = 30;
 
+  isOwner: boolean = false;
+  isWaitingForGameStart: boolean = true;
   lobbyId: string | null = null;
   messages: string[] = [];
   messageContent: string = '';
@@ -73,13 +75,16 @@ export class GameComponent implements AfterViewInit{
               private notificationService: NotificationService,
               private router: Router) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
+    this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
   }
 
   ngAfterViewInit() {
     this.subscribeToGame();
     this.prepareDrawingEnv(false);
     this.subscribeToWordChannel();
-    this.stompService.sendStartGame(this.lobbyId);
+    if (this.isOwner) {
+      this.stompService.sendStartGame(this.lobbyId);
+    }
     this.initializeDrawingEventSender();
   }
 
@@ -94,6 +99,7 @@ export class GameComponent implements AfterViewInit{
   private subscribeToGame() {
     if (this.lobbyId) {
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
+        this.isWaitingForGameStart = false;
         this.clearCanvas();
         this.nextDrawer = gameState.drawerName;
         this.scores = gameState.playerScores;

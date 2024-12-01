@@ -29,7 +29,8 @@
   </div>
   <div class="lower-container">
     <span class="code" (click)="copyToClipboard()">Code: {{ this.lobbyId }}</span>
-    <button (click)="startGame()">Start Game</button>
+    <button *ngIf="isOwner" (click)="startGame()">Start Game</button>
+    <button disabled *ngIf="!isOwner">Waiting for owner to start the game...</button>
   </div>
   <span *ngIf="!copiedCodeToClipboard" class="hint">Tip: Click on the code to copy & share it with your co-players!</span>
   <span *ngIf="copiedCodeToClipboard" class="hint">Copied lobby code to clipboard. Share it now!</span>
