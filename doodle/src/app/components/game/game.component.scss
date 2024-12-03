@@ -127,14 +127,29 @@ button {
   margin-left: 10px;
   padding: 10px;
   border: none;
-  background-color: #4CAF50;
-  color: white;
   cursor: pointer;
-  border-radius: 4px;
 }
 
-button:hover {
-  background-color: #45a049;
+.send-guess-button {
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 18px;
+  background: linear-gradient(40deg, #f8a5b6, #b1cfde);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-family: "Lato", sans-serif;
+  transition-duration: 0.4s;
+}
+
+.send-guess-button:hover {
+  background: linear-gradient(40deg, #FF69B4, #87CEEB);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transform: scale(1.05);
+  color: white;
 }
 
 .head {

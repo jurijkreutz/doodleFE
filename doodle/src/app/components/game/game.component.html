@@ -14,6 +14,10 @@
         Waiting for all users to be ready...
         <div class="loader"></div>
       </div>
+      <div class="waiting-for-start-box" *ngIf="isWaitingForDrawer">
+        The next drawer is {{this.nextDrawer}}.
+        <div class="loader"></div>
+      </div>
         <canvas #drawingCanvas id="drawingCanvas" width="800" height="600">
         </canvas>
     </div>
@@ -34,7 +38,7 @@
         <div *ngIf="!isDrawer" class="guess-input">
           <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess" (keydown.enter)="sendGuess()"
           [attr.maxlength]="maxGuessLength">
-          <button (click)="sendGuess()">Send</button>
+          <button class="send-guess-button" (click)="sendGuess()">Send</button>
         </div>
         <div *ngIf="isDrawer" class="color-picker">
           <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)"></button>

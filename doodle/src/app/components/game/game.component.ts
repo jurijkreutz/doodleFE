@@ -33,32 +33,29 @@ export class GameComponent implements AfterViewInit{
   private sendInterval = 10; // ms
   private drawingEventsBuffer: any[] = [];
 
+  // protected values for template binding
   protected maxGuessLength: number = 30;
+  protected isWaitingForGameStart: boolean = true;
+  protected isWaitingForDrawer: boolean = false;
+  protected messages: string[] = [];
+  protected messageContent: string = '';
+  protected isDrawer: boolean = false;
+  protected wordToDraw: string = '';
+  protected wordOverlayShown: boolean = false;
+  protected wordInHeadShown: boolean = false;
+  protected scores: Map<string, number> = new Map<string, number>();
+  protected correctlyGuessedWord: string = '';
+  protected userThatGuessed: string = '';
+  protected nextDrawer: string = '';
+  protected nextRoundScreenShown: boolean = false;
+  protected colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
 
-  isOwner: boolean = false;
-  selectedSpeed: string = '';
-
-  isWaitingForGameStart: boolean = true;
-  lobbyId: string | null = null;
-  messages: string[] = [];
-  messageContent: string = '';
-
-  isFirstRound: boolean = true;
-  isDrawer: boolean = false;
-  wordToDraw: string = '';
-  wordOverlayShown: boolean = false;
-  wordInHeadShown: boolean = false;
-
-  scores: Map<string, number> = new Map<string, number>();
-
-  correctlyGuessedWord: string = '';
-  userThatGuessed: string = '';
-  nextDrawer: string = '';
-  nextRoundScreenShown: boolean = false;
-  isWaitingForServer: boolean = false;
-
-  colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
-  selectedColor: string = '#000000';
+  private isOwner: boolean = false;
+  private selectedSpeed: string = '';
+  private lobbyId: string | null = null;
+  private isFirstRound: boolean = true;
+  private isWaitingForServer: boolean = false;
+  private selectedColor: string = '#000000';
 
   private readonly SCREEN_OVERLAY_DURATION_SECONDS = 5; // only change this value if you change in backend as well
 
@@ -66,7 +63,6 @@ export class GameComponent implements AfterViewInit{
   private countdownTimeout: any;
 
   private nextRoundScreenSubject = new Subject<boolean>();
-
 
   private boundStartDrawing = this.startDrawing.bind(this);
   private boundDraw = this.draw.bind(this);
@@ -103,54 +99,80 @@ export class GameComponent implements AfterViewInit{
   private subscribeToGame() {
     if (this.lobbyId) {
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
-        this.isWaitingForGameStart = false;
-        this.clearCanvas();
-        this.nextDrawer = gameState.drawerName;
-        this.scores = gameState.playerScores;
-        let roundTime: number = gameState.roundTime;
-        this.handleCountdown(roundTime);
+        this.updateLocalGameState(gameState);
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
-        this.isWaitingForServer = false;
-        if (guessEvaluation.status == "correctly") {
-          this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}`);
-        } else if (guessEvaluation.status == "incorrectly") {
-          this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
-        }
-        if (guessEvaluation.status == "correctly") {
-          this.handleCorrectGuess(guessEvaluation);
-        } else if (guessEvaluation.status == "timeout") {
-          this.showNextRoundScreen(guessEvaluation.word, `Oops! Time is up. The word was:`);
-          this.resetEnvironment();
-        }
-        setTimeout(() => this.scrollToBottom(), 50);
+        this.handleGuessNotification(guessEvaluation);
       });
     }
   }
 
+  private handleGuessNotification(guessEvaluation: any) {
+    this.isWaitingForServer = false;
+    if (guessEvaluation.status == "correctly") {
+      this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}`);
+    } else if (guessEvaluation.status == "incorrectly") {
+      this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
+    }
+    if (guessEvaluation.status == "correctly") {
+      this.handleCorrectGuess(guessEvaluation);
+    } else if (guessEvaluation.status == "timeout") {
+      this.showNextRoundScreen(guessEvaluation.word, `Oops! Time is up. The word was:`);
+      this.resetEnvironment();
+    }
+    setTimeout(() => this.scrollToBottom(), 50);
+  }
+
+  private updateLocalGameState(gameState: any) {
+    this.isWaitingForGameStart = false;
+    this.clearCanvas();
+    this.nextDrawer = gameState.drawerName;
+    this.scores = gameState.playerScores;
+    let roundTime: number = gameState.roundTime;
+    this.handleCountdown(roundTime);
+  }
+
   private handleCountdown(roundTime: number) {
     this.clearTimeoutAndInterval();
-    let pureRoundTime = roundTime -
-      (this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS : this.SCREEN_OVERLAY_DURATION_SECONDS * 2);
+    let pureRoundTime = this.calculatePureRoundTime(roundTime);
     const totalDuration = pureRoundTime;
     const progressBar = document.getElementById('progress-bar') as HTMLElement;
     this.resetProgressBar(progressBar);
-    const screenOverlayWaitTime =
-      this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 : this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 * 2;
-    this.countdownTimeout = setTimeout(() => {
+    const screenOverlayWaitTime = this.calculateScreenOverlayWaitTime();
+    this.isFirstRound = false;
+    this.isWaitingForDrawer = true;
+    this.countdownTimeout = setTimeout(() => { // wait while the overlays are being shown
+      this.clearCanvas();
       this.countdownInterval = setInterval(() => {
-        this.isFirstRound = false;
         if (pureRoundTime > 0) {
-          pureRoundTime--;
-          this.updateProgressBar(pureRoundTime, totalDuration, progressBar);
+          pureRoundTime = this.countDownTime(pureRoundTime, totalDuration, progressBar);
         } else {
-          this.isWaitingForServer = true;
-          clearInterval(this.countdownInterval);
-          console.log('Time is up!');
-          this.handleServerTimeout();
+          this.waitForServerIfTimeIsUp();
         }
       }, 1000);
+      this.isWaitingForDrawer = false;
     }, screenOverlayWaitTime);
+  }
+
+  private waitForServerIfTimeIsUp() {
+    this.isWaitingForServer = true;
+    clearInterval(this.countdownInterval);
+    this.handleServerTimeout();
+  }
+
+  private countDownTime(pureRoundTime: number, totalDuration: number, progressBar: HTMLElement) {
+    pureRoundTime--;
+    this.updateProgressBar(pureRoundTime, totalDuration, progressBar);
+    return pureRoundTime;
+  }
+
+  private calculateScreenOverlayWaitTime() {
+    return this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 : this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 * 2;
+  }
+
+  private calculatePureRoundTime(roundTime: number) {
+    return roundTime -
+      (this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS : this.SCREEN_OVERLAY_DURATION_SECONDS * 2);
   }
 
   private clearTimeoutAndInterval() {
@@ -264,7 +286,6 @@ export class GameComponent implements AfterViewInit{
       this.updateNextRoundScreenShown(false);
       this.correctlyGuessedWord = '';
       this.userThatGuessed = '';
-      this.nextDrawer = '';
     }, this.SCREEN_OVERLAY_DURATION_SECONDS * 1000);
   }
 
@@ -390,7 +411,7 @@ export class GameComponent implements AfterViewInit{
     }
   }
 
-  selectColor(color: string) {
+  protected selectColor(color: string) {
     this.selectedColor = color;
   }
 
