@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnDestroy, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
@@ -24,7 +24,7 @@ import {NotificationService} from "../../service/notification.service";
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
 })
-export class GameComponent implements AfterViewInit{
+export class GameComponent implements AfterViewInit, OnDestroy{
   @ViewChild('drawingCanvas') drawingCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('scrollMe') myScrollContainer!: ElementRef;
 
@@ -86,6 +86,11 @@ export class GameComponent implements AfterViewInit{
       this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed);
     }
     this.initializeDrawingEventSender();
+  }
+
+  ngOnDestroy() {
+    this.clearTimeoutAndInterval();
+    this.removeCanvasEventListeners();
   }
 
   private initializeDrawingEventSender() {
