@@ -1,6 +1,7 @@
 import {Component, Output, EventEmitter, OnInit} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {HeartbeatService} from "../../../service/heartbeat.service";
+import {NotificationService} from "../../../service/notification.service";
 
 @Component({
   selector: 'app-overlay',
@@ -17,9 +18,11 @@ export class OverlayComponent implements OnInit {
   protected maxNameLength: number = 20;
 
   private heartBeatService: HeartbeatService;
+  private notificationService: NotificationService;
 
-  constructor(heartBeatService: HeartbeatService) {
+  constructor(heartBeatService: HeartbeatService, notificationService: NotificationService) {
     this.heartBeatService = heartBeatService;
+    this.notificationService = notificationService;
   }
 
   ngOnInit() {
@@ -27,7 +30,10 @@ export class OverlayComponent implements OnInit {
   }
 
   onNameEnter() {
-    this.nameEntered.emit(this.userName);
+    if (this.userName.trim().length > 0) {
+      this.nameEntered.emit(this.userName);
+    } else {
+      this.notificationService.showError('You need a name to play!');
+    }
   }
-
 }
