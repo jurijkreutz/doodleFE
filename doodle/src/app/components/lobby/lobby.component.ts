@@ -38,6 +38,7 @@ export class LobbyComponent implements AfterViewInit {
   ngAfterViewInit() {
     if (typeof this.lobbyId === "string") {
       this.stompService.subscribeToLobby(this.lobbyId, (message: any) => {
+        this.pushChatMessageWhenPlayerJoins(message.players);
         this.playerList = message.players;
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
@@ -70,7 +71,7 @@ export class LobbyComponent implements AfterViewInit {
     }
   }
 
-  sendMessage(): void {
+  protected sendMessage(): void {
     if (this.messageContent.trim() !== '') {
       const chatMessage = {
         content: this.messageContent,
@@ -84,7 +85,20 @@ export class LobbyComponent implements AfterViewInit {
     }
   }
 
-  copyToClipboard() {
+  private pushChatMessageWhenPlayerJoins(newPlayerList: string[]) {
+    newPlayerList.forEach(player => {
+      if (!this.playerList.includes(player)) {
+        this.messages.push({
+          sender: 'SketchOff',
+          content: player + ' joined the lobby.',
+          type: 'CHAT'
+        });
+        setTimeout(() => this.scrollToBottom(), 50);
+      }
+    });
+  }
+
+  protected copyToClipboard() {
     if (typeof this.lobbyId === "string") {
       if(navigator.clipboard) {
         navigator.clipboard.writeText(this.lobbyId).then(() => {
@@ -97,7 +111,7 @@ export class LobbyComponent implements AfterViewInit {
     }
   }
 
-  startGame() {
+  protected startGame() {
     if (this.playerList.length < 2) {
       this.messages.push({
         sender: 'SketchOff',
@@ -112,7 +126,7 @@ export class LobbyComponent implements AfterViewInit {
     }
   }
 
-  scrollToBottom(): void {
+  private scrollToBottom(): void {
     try {
       this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
     } catch(err) {
