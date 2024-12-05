@@ -98,9 +98,18 @@ export class LobbyComponent implements AfterViewInit {
   }
 
   startGame() {
-    this.router.navigate(['/game/' + this.lobbyId],
-      {state: { isOwner: true, speed: this.selectedSpeed }}
-    );
+    if (this.playerList.length < 2) {
+      this.messages.push({
+        sender: 'SketchOff',
+        content: "You can`t play alone! Invite some friends to join the game.",
+        type: 'CHAT'
+      });
+      setTimeout(() => this.scrollToBottom(), 50);
+    } else {
+      this.router.navigate(['/game/' + this.lobbyId],
+        {state: { isOwner: true, speed: this.selectedSpeed }}
+      );
+    }
   }
 
   scrollToBottom(): void {
