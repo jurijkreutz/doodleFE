@@ -10,6 +10,12 @@ import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
 import {NotificationService} from "../../service/notification.service";
 
+interface GameMessage {
+  type: string;
+  user?: string;
+  content: string;
+}
+
 @Component({
   selector: 'app-game',
   standalone: true,
@@ -37,7 +43,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected maxGuessLength: number = 30;
   protected isWaitingForGameStart: boolean = true;
   protected isWaitingForDrawer: boolean = false;
-  protected messages: string[] = [];
+  protected messages: GameMessage[] = [];
   protected messageContent: string = '';
   protected isDrawer: boolean = false;
   protected wordToDraw: string = '';
@@ -115,9 +121,9 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private handleGuessNotification(guessEvaluation: any) {
     this.isWaitingForServer = false;
     if (guessEvaluation.status == "correctly") {
-      this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word correctly! The word was ${guessEvaluation.word}`);
+      this.messages.push({ type: 'correctly', user: guessEvaluation.userThatGuessed, content: `guessed the word correctly! The word was ${guessEvaluation.word}.` });
     } else if (guessEvaluation.status == "incorrectly") {
-      this.messages.push(`Player ${guessEvaluation.userThatGuessed} guessed the word: ${guessEvaluation.word}. It was incorrect.`);
+      this.messages.push({ type: 'incorrectly', user: guessEvaluation.userThatGuessed, content: `${guessEvaluation.word}` });
     }
     if (guessEvaluation.status == "correctly") {
       this.handleCorrectGuess(guessEvaluation);
@@ -148,6 +154,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.isWaitingForDrawer = true;
     this.countdownTimeout = setTimeout(() => { // wait while the overlays are being shown
       this.clearCanvas();
+      this.pushNewDrawingChatMessage();
       this.countdownInterval = setInterval(() => {
         if (pureRoundTime > 0) {
           pureRoundTime = this.countDownTime(pureRoundTime, totalDuration, progressBar);
@@ -157,6 +164,11 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       }, 1000);
       this.isWaitingForDrawer = false;
     }, screenOverlayWaitTime);
+  }
+
+  private pushNewDrawingChatMessage() {
+    this.messages.push({type: 'new-round', content: `New drawing. Get ready to guess!`});
+    setTimeout(() => this.scrollToBottom(), 50);
   }
 
   private waitForServerIfTimeIsUp() {

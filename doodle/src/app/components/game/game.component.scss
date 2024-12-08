@@ -184,6 +184,39 @@ button {
   margin-bottom: 0.5rem;
 }
 
+.chat-message .username {
+  font-weight: 500;
+}
+
+.correctly {
+  color: #4caf50;
+  text-shadow: 0 0 3px #a1cfa3;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    text-shadow: 0 0 1px #32CD32, 0 0 1px #32CD32;
+  }
+  50% {
+    text-shadow: 0 0 2px #32CD32, 0 0 4px #32CD32;
+  }
+  100% {
+    text-shadow: 0 0 1px #32CD32, 0 0 1px #32CD32;
+  }
+}
+
+.new-round {
+  display: block;
+  width: 100%;
+  background-color: #658ac4;
+  color: #ffffff;
+  padding: 0.1rem;
+  box-sizing: border-box;
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
 .color-picker {
   display: flex;
   justify-content: center;

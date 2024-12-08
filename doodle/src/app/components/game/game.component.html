@@ -31,7 +31,15 @@
       <div #scrollMe class="guess-window">
         <div class="head">Guesses</div>
         <div class="guess-chat" *ngFor="let message of messages">
-          {{message}}
+          <span class="chat-message correctly" *ngIf="message.type === 'correctly'">
+            <span class="username">{{message.user}}</span> {{ message.content }}
+          </span>
+          <span class="chat-message" *ngIf="message.type === 'incorrectly'">
+            <span class="username">{{message.user}}:</span> {{ message.content }}
+          </span>
+          <span class="chat-message new-round" *ngIf="message.type === 'new-round'">
+            {{ message.content }}
+          </span>
         </div>
       </div>
       <div class="controls">
