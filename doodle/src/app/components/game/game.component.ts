@@ -55,7 +55,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected userThatGuessed: string = '';
   protected nextDrawer: string = '';
   protected nextRoundScreenShown: boolean = false;
-  protected colors: string[] = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+  protected colors: string[] = ['#ed7a70', '#FBBC04', '#fbee4e', '#b5fa61', '#78fadc', '#7cdcf1', '#bb7cf3'];
 
   private isOwner: boolean = false;
   private selectedSpeed: string = '';
@@ -63,7 +63,9 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private playerList: Player[] = [];
   private isFirstRound: boolean = true;
   private isWaitingForServer: boolean = false;
+
   private selectedColor: string = '#000000';
+  protected currentTool: string = 'brush';
 
   private readonly SCREEN_OVERLAY_DURATION_SECONDS = 5; // only change this value if you change in backend as well
 
@@ -409,7 +411,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     const pos = this.getMousePosition(event);
     this.canvasContext.lineTo(pos.x, pos.y);
     this.canvasContext.stroke();
-    this.addDrawingEventToBuffer('draw', pos); // Add to buffer
+    this.addDrawingEventToBuffer('draw', pos);
   }
 
   private stopDrawing() {
@@ -427,7 +429,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
         color: this.selectedColor,
         lineWidth: this.canvasContext.lineWidth
       };
-      this.drawingEventsBuffer.push(drawingEvent); // Add to buffer
+      this.drawingEventsBuffer.push(drawingEvent);
     }
   }
 
@@ -440,6 +442,16 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   protected selectColor(color: string) {
     this.selectedColor = color;
+    this.currentTool = 'brush';
+  }
+
+  protected selectEraser() {
+    this.selectedColor = '#ffffff';
+    this.currentTool = 'brush';
+  }
+
+  protected selectFillBucket() {
+    this.currentTool = 'fill';
   }
 
   private processDrawingEvent(drawingEvents: any[]) {

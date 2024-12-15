@@ -54,7 +54,13 @@
           <button class="send-guess-button" (click)="sendGuess()">Send</button>
         </div>
         <div *ngIf="isDrawer" class="color-picker">
-          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)"></button>
+          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)" class="color-button"></button>
+          <!-- <button class="fill-button" (click)="selectFillBucket()">
+            <img src="assets/game/fill.webp" alt="Fill" class="fill-icon">
+          </button> -->
+          <button class="eraser-button" (click)="selectEraser()">
+            <img src="assets/game/eraser.webp" alt="Eraser" class="eraser-icon">
+          </button>
         </div>
       </div>
     </div>

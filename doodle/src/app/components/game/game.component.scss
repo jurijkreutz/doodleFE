@@ -219,22 +219,28 @@ button {
 
 .color-picker {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
-  padding: 10px;
+  gap: 15px;
+  column-gap: 0;
+  padding: 10px 0;
   background: #fff;
 }
 
-.color-picker button {
-  width: 30px;
-  height: 30px;
+.color-picker .color-button {
+  width: 37px;
+  height: 37px;
   margin: 0 5px;
-  border: none;
+  border: 0.8px solid #000;
   border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
-.color-picker button:hover {
-  border: 2px solid #000;
+.color-picker .color-button:hover {
+  transform: scale(2);
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2), inset 0px -2px 6px rgba(255, 255, 255, 0.8);
 }
 
 @keyframes pulsate {
@@ -354,3 +360,39 @@ button {
   white-space: nowrap;
 }
 
+.eraser-button {
+  display: flex;
+  align-items: end;
+  padding-top: 42px;
+  padding-left: 0;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border: none;
+  cursor: pointer;
+  background-color: #FFFFFF;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.eraser-button:hover {
+  border: none !important;
+}
+
+.eraser-icon {
+  width: 45px;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+}
+
+.eraser-icon:hover {
+  transform: scale(2);
+}
+
+#custom-cursor {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+  display: none;
+  z-index: 1000;
+}
