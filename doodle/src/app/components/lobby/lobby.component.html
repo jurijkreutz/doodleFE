@@ -15,15 +15,18 @@
           </div>
         </div>
       </div>
+      <div *ngIf="newPlayerBubble" class="bubble">
+        <img [src]="getAvatarUrl(newPlayerBubble.avatar)" alt="Avatar" class="bubble-avatar">
+      </div>
       <div class="chat-input">
         <input type="text" [(ngModel)]="messageContent" placeholder="Type a message" (keydown.enter)="sendMessage()" [attr.maxlength]="maxMessageLength">
         <button (click)="sendMessage()">Send</button>
       </div>
     </div>
     <div class="player-list">
-      <div class="head">Players</div>
-      <div *ngFor="let player of playerList; index as i;">
-        <span>{{ player }}</span>
+      <div class="player-entry" *ngFor="let player of playerList">
+        <img [src]="getAvatarUrl(player.avatar)" alt="Avatar" class="player-avatar">
+        <span class="player-username">{{ player.username }}</span>
       </div>
     </div>
   </div>

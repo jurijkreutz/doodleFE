@@ -1,10 +1,10 @@
 import {AfterViewInit, Component, ElementRef, OnDestroy, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
-import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
+import {KeyValuePipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
-import {WordToDraw} from "../../models/response.models";
+import {Player, WordToDraw} from "../../models/response.models";
 import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay.component";
 import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
@@ -25,7 +25,8 @@ interface GameMessage {
     NgIf,
     WordOverlayComponent,
     NextRoundOverlayComponent,
-    KeyValuePipe
+    KeyValuePipe,
+    NgClass
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -59,6 +60,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private isOwner: boolean = false;
   private selectedSpeed: string = '';
   private lobbyId: string | null = null;
+  private playerList: Player[] = [];
   private isFirstRound: boolean = true;
   private isWaitingForServer: boolean = false;
   private selectedColor: string = '#000000';
@@ -138,7 +140,15 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.isWaitingForGameStart = false;
     this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
-    this.scores = gameState.playerScores;
+    this.playerList = gameState.players;
+    if (typeof gameState.playerScores === 'object' && !Array.isArray(gameState.playerScores)) {
+      this.scores = new Map<string, number>(Object.entries(gameState.playerScores));
+    } else if (Array.isArray(gameState.playerScores)) {
+      this.scores = new Map<string, number>(gameState.playerScores);
+    } else {
+      console.error('Unexpected format for playerScores:', gameState.playerScores);
+      this.scores = new Map<string, number>();
+    }
     let roundTime: number = gameState.roundTime;
     this.handleCountdown(roundTime);
   }
@@ -498,5 +508,22 @@ export class GameComponent implements AfterViewInit, OnDestroy{
           });
       }
     }, 20000);
+  }
+
+  protected getAvatarUrl(playerName: string): string {
+    const avatar = this.playerList.find(player => player.username === playerName)?.avatar;
+    return `/assets/avatars/avatar-${avatar}.webp`;
+  }
+
+  protected getScoreClass(playerName: string): string {
+    const scoresArray = [...this.scores.values()];
+    const highestScore = Math.max(...scoresArray);
+    const secondHighest = scoresArray.sort((a, b) => b - a)[1] || 0;
+    const score = this.scores.get(playerName);
+
+    if (score === highestScore) return 'gold-badge';
+    if (score === secondHighest) return 'silver-badge';
+    if (score === undefined || score < 0) return 'negative-score';
+    return 'default-badge';
   }
 }

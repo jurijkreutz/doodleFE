@@ -5,11 +5,12 @@ import {NotificationComponent} from "./notification/notification.component";
 import {HeartbeatService} from "./service/heartbeat.service";
 import {filter} from "rxjs";
 import {NgIf} from "@angular/common";
+import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NotificationComponent, NgIf],
+  imports: [RouterOutlet, NotificationComponent, NgIf, FontAwesomeModule],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

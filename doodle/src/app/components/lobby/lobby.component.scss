@@ -22,7 +22,8 @@
   display: flex;
   flex-direction: column;
   margin: 10px;
-  width: 80%;
+  width: 70%;
+  position: relative;
 }
 
 .chat-window {
@@ -52,17 +53,72 @@ input {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  margin-right: 15px;
 }
 
 .player-list {
   flex-grow: 1;
-  padding: 10px;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  width: 20%;
+  padding: 10px 15px;
   background: linear-gradient(40deg, #fdedf1, #eafafb);
   border-radius: 16px;
   margin: 10px 10px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  max-height: 320px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  scrollbar-width: none;
+}
+
+.player-list::-webkit-scrollbar {
+  display: none;
+}
+
+.player-entry {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: white;
+  border-radius: 8px;
+  padding: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: default;
+}
+
+.player-entry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.player-avatar {
+  width: 55px;
+  border-radius: 50%;
+  margin-right: 10px;
+  border: 2px solid #e0e0e0;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+.player-entry:hover .player-avatar {
+  transform: scale(1.4);
+  border-color: #658ac4;
+  z-index: 100;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.player-username {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .lower-container {
@@ -114,7 +170,6 @@ button:hover {
   color: white;
 }
 
-// add special css for disabled button
 button:disabled {
   background: linear-gradient(40deg, #bababa, #87CEEB);
   transform: scale(1);
@@ -123,7 +178,6 @@ button:disabled {
   animation: pulse 3s infinite;
 }
 
-// cool pulsating effect for waiting button
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -216,4 +270,46 @@ button:disabled {
   margin-right: 10px;
   cursor: pointer;
   flex-shrink: 0;
+}
+
+.bubble {
+  position: absolute;
+  bottom: 30px;
+  left: 75%;
+  transform: translateX(-75%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  animation: bubbleFloat 2s ease-in-out forwards;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+@keyframes bubbleFloat {
+  0% {
+    transform: translateY(20px) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-150px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+.bubble-avatar {
+  width: 65px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }

@@ -10,3 +10,8 @@ export interface IsOwnerResponse {
 export interface WordToDraw {
   word: string;
 }
+
+export interface Player {
+  username: string,
+  avatar: string
+}

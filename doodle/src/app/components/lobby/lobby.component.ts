@@ -3,6 +3,7 @@ import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
 import {StompService} from "../../service/api/stomp.service";
 import {FormsModule} from "@angular/forms";
+import {Player} from "../../models/response.models";
 
 
 @Component({
@@ -20,8 +21,9 @@ export class LobbyComponent implements AfterViewInit {
   protected lobbyId: string | null;
   protected isOwner: boolean;
   protected copiedCodeToClipboard: boolean = false;
-  protected playerList: string[];
+  protected playerList: Player[] = [];
   protected messages: any[] = [];
+  protected newPlayerBubble: { username: string, avatar: string } | null = null;
   protected messageContent: string = '';
   protected maxMessageLength: number = 100;
   protected selectedSpeed: string = 'rapid';
@@ -39,6 +41,7 @@ export class LobbyComponent implements AfterViewInit {
     if (typeof this.lobbyId === "string") {
       this.stompService.subscribeToLobby(this.lobbyId, (message: any) => {
         this.pushChatMessageWhenPlayerJoins(message.players);
+        this.pushChatMessageWhenPlayerLeaves(message.players);
         this.playerList = message.players;
       });
       this.stompService.subscribeToChat(this.lobbyId, (message: any) => {
@@ -85,17 +88,28 @@ export class LobbyComponent implements AfterViewInit {
     }
   }
 
-  private pushChatMessageWhenPlayerJoins(newPlayerList: string[]) {
+  private pushChatMessageWhenPlayerJoins(newPlayerList: Player[]) {
     newPlayerList.forEach(player => {
-      if (!this.playerList.includes(player)) {
+      if (!this.playerList.some(existingPlayer => existingPlayer.username === player.username)) {
         this.messages.push({
           sender: 'SketchOff',
-          content: player + ' joined the lobby.',
+          content: player.username + ' joined the lobby.',
           type: 'CHAT'
         });
+        this.initFloatingPlayerBubble(player);
         setTimeout(() => this.scrollToBottom(), 50);
       }
     });
+  }
+
+  private initFloatingPlayerBubble(player: Player) {
+    this.newPlayerBubble = {
+      username: player.username,
+      avatar: player.avatar
+    };
+    setTimeout(() => {
+      this.newPlayerBubble = null;
+    }, 2000);
   }
 
   protected copyToClipboard() {
@@ -132,5 +146,22 @@ export class LobbyComponent implements AfterViewInit {
     } catch(err) {
       console.error('Could not automatically scroll to bottom: ', err);
     }
+  }
+
+  protected getAvatarUrl(avatar: string): string {
+    return `/assets/avatars/avatar-${avatar}.webp`;
+  }
+
+  private pushChatMessageWhenPlayerLeaves(newPlayerList: Player[]) {
+    this.playerList.forEach(existingPlayer => {
+      if (!newPlayerList.some(player => player.username === existingPlayer.username)) {
+        this.messages.push({
+          sender: 'SketchOff',
+          content: existingPlayer.username + ' left the lobby.',
+          type: 'CHAT'
+        });
+        setTimeout(() => this.scrollToBottom(), 50);
+      }
+    });
   }
 }

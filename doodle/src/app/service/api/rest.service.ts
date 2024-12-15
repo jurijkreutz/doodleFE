@@ -12,9 +12,11 @@ export class RestService {
 
   constructor(private http: HttpClient) { }
 
-  public sendInitializeSessionRequest(username: string): Observable<void> {
+  public sendInitializeSessionRequest(username: string, avatar: number): Observable<void> {
     const url = `${this.REST_URL}/session`;
-    const params = new HttpParams().set('userName', username);
+    const params = new HttpParams()
+      .set('userName', username)
+      .set('avatar', avatar.toString());
     const options = { params, withCredentials: true };
     return this.http.get<void>(url, options).pipe(
       catchError(this.handleError)

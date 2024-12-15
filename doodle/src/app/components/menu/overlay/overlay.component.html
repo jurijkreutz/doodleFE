@@ -2,6 +2,18 @@
   <div class="overlay-block">
     <h2>Enter your name to start doodling</h2>
     <input [(ngModel)]="userName" placeholder="Enter name" (keydown.enter)="onNameEnter()" [attr.maxlength]="maxNameLength">
+    <div class="avatar-chooser">
+      <fa-icon [icon]="faArrowLeft" (click)="previousAvatar()" class="arrow-icon"></fa-icon>
+      <img
+        [ngClass]="animationClass"
+        [ngSrc]="avatarPath"
+        alt="Avatar"
+        class="avatar-image"
+        width="100"
+        height="100"
+      />
+      <fa-icon [icon]="faArrowRight" (click)="nextAvatar()" class="arrow-icon"></fa-icon>
+    </div>
     <button (click)="onNameEnter()">Enter</button>
   </div>
 </div>

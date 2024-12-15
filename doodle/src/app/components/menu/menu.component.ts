@@ -78,12 +78,12 @@ export class MenuComponent {
     );
   }
 
-  onNameEntered(username: string) {
-    this.initSession(username);
+  onNameEntered(data: {name: string, avatar: number}) {
+    this.initSession(data.name, data.avatar);
   }
 
-  private initSession(username: string) {
-    this.restService.sendInitializeSessionRequest(username).subscribe(
+  private initSession(username: string, avatar: number) {
+    this.restService.sendInitializeSessionRequest(username, avatar).subscribe(
       () => {
         console.log('Session initialized');
         this.stompService.reconnect();

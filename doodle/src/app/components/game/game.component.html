@@ -23,9 +23,14 @@
     </div>
     <div class="guess-section">
       <div class="score-window">
-        <div class="head">Scores</div>
-        <div class="guess-chat" *ngFor="let player of scores | keyvalue">
-          {{player.key}}: {{player.value}}
+        <div class="player-score" *ngFor="let player of scores | keyvalue">
+          <div class="player-avatar-container">
+            <img [src]="getAvatarUrl(player.key)" alt="Avatar" class="player-avatar">
+            <div class="score-badge" [ngClass]="getScoreClass(player.key)">
+              {{ player.value }}
+            </div>
+          </div>
+          <div class="player-name">{{ player.key }}</div>
         </div>
       </div>
       <div #scrollMe class="guess-window">
