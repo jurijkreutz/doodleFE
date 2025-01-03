@@ -54,13 +54,26 @@
           <button class="send-guess-button" (click)="sendGuess()">Send</button>
         </div>
         <div *ngIf="isDrawer" class="color-picker">
-          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)" class="color-button"></button>
-          <!-- <button class="fill-button" (click)="selectFillBucket()">
-            <img src="assets/game/fill.webp" alt="Fill" class="fill-icon">
-          </button> -->
-          <button class="eraser-button" (click)="selectEraser()">
-            <img src="assets/game/eraser.webp" alt="Eraser" class="eraser-icon">
+          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)" class="color-button">
+            <fa-icon *ngIf="selectedColor === color" [icon]="faCheck" class="check-icon"></fa-icon>
           </button>
+          <div class="tool-picker">
+            <button class="brush-button" (click)="selectBrush()">
+              <fa-icon *ngIf="currentTool === 'brush' && selectedColor != '#ffffff'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
+              <img src="assets/game/brush.webp" alt="Brush" class="brush-icon">
+            </button>
+            <button class="fill-button" (click)="selectFillBucket()">
+              <fa-icon *ngIf="currentTool === 'fill'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
+              <img src="assets/game/bucket.webp" alt="Fill" class="fill-icon">
+            </button>
+            <button class="eraser-button" (click)="selectEraser()">
+              <fa-icon *ngIf="selectedColor === '#ffffff' && currentTool === 'brush'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
+              <img src="assets/game/eraser.webp" alt="Eraser" class="eraser-icon">
+            </button>
+            <button class="trash-button" (click)="resetCanvas()">
+              <img src="assets/game/trash.webp" alt="Trash" class="eraser-icon">
+            </button>
+          </div>
         </div>
       </div>
     </div>

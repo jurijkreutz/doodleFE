@@ -228,6 +228,7 @@ button {
 }
 
 .color-picker .color-button {
+  position: relative;
   width: 37px;
   height: 37px;
   margin: 0 5px;
@@ -360,7 +361,8 @@ button {
   white-space: nowrap;
 }
 
-.eraser-button {
+.eraser-button, .fill-button, .brush-button, .trash-button {
+  position: relative;
   display: flex;
   align-items: end;
   padding-top: 42px;
@@ -370,21 +372,29 @@ button {
   height: 50px;
   border: none;
   cursor: pointer;
-  background-color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.eraser-button:hover {
+.fill-button, .trash-button {
+  margin-left: 5px;
+}
+
+.brush-button {
+  width: 30px;
+}
+
+.eraser-button:hover, .fill-button:hover, .brush-button:hover, .trash-button:hover {
   border: none !important;
 }
 
-.eraser-icon {
-  width: 45px;
+.eraser-icon, .fill-icon, .brush-icon, .trash-button {
+  height: 45px;
   object-fit: contain;
   transition: transform 0.3s ease;
 }
 
-.eraser-icon:hover {
+.eraser-button:hover, .fill-button:hover, .brush-icon:hover, .trash-button:hover {
   transform: scale(2);
 }
 
@@ -395,4 +405,44 @@ button {
   pointer-events: none;
   display: none;
   z-index: 1000;
+}
+
+.check-icon {
+  position: absolute;
+  top: -10px;
+  left: 5%;
+  transform: translateX(-50%);
+  font-size: 16px;
+  color: #ffffff;
+  background: #658ac4;
+  border-radius: 50%;
+  padding: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.arrow-icon {
+  position: absolute;
+  top: -10px;
+  left: 5%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  color: #ffffff;
+  background: #658ac4;
+  border-radius: 50%;
+  padding: 5px 5px 5px 6px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  z-index: 2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tool-picker {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  column-gap: 0;
+  padding: 10px 0;
 }
