@@ -9,6 +9,9 @@ import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay
 import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
 import {NotificationService} from "../../service/notification.service";
+import {FaIconComponent} from "@fortawesome/angular-fontawesome";
+import {faCheck, faArrowPointer} from "@fortawesome/free-solid-svg-icons";
+import {FillBucket} from "./utils/fill-bucket";
 
 interface GameMessage {
   type: string;
@@ -26,7 +29,8 @@ interface GameMessage {
     WordOverlayComponent,
     NextRoundOverlayComponent,
     KeyValuePipe,
-    NgClass
+    NgClass,
+    FaIconComponent
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -55,7 +59,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected userThatGuessed: string = '';
   protected nextDrawer: string = '';
   protected nextRoundScreenShown: boolean = false;
-  protected colors: string[] = ['#ed7a70', '#FBBC04', '#fbee4e', '#b5fa61', '#78fadc', '#7cdcf1', '#bb7cf3'];
+  protected colors: string[] = ['#000000', '#ed7a70', '#FBBC04', '#fbee4e', '#b5fa61', '#78fadc', '#7cdcf1', '#bb7cf3'];
 
   private isOwner: boolean = false;
   private selectedSpeed: string = '';
@@ -64,7 +68,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private isFirstRound: boolean = true;
   private isWaitingForServer: boolean = false;
 
-  private selectedColor: string = '#000000';
+  protected selectedColor: string = '#000000';
   protected currentTool: string = 'brush';
 
   private readonly SCREEN_OVERLAY_DURATION_SECONDS = 5; // only change this value if you change in backend as well
@@ -398,8 +402,30 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private startDrawing(event: MouseEvent) {
     if (!this.isDrawer) return;
-    this.isDrawing = true;
+
     const pos = this.getMousePosition(event);
+
+    if (this.currentTool === 'fill') {
+      FillBucket.floodFill(
+        this.canvasContext,
+        this.drawingCanvas.nativeElement,
+        pos.x,
+        pos.y,
+        this.selectedColor);
+
+      if (this.lobbyId) {
+        const fillEvent = {
+          type: 'fill',
+          position: { x: pos.x, y: pos.y },
+          color: this.selectedColor
+        };
+        this.drawingEventsBuffer.push(fillEvent);
+      }
+
+      return;
+    }
+
+    this.isDrawing = true;
     this.canvasContext.beginPath();
     this.canvasContext.moveTo(pos.x, pos.y);
     this.canvasContext.strokeStyle = this.selectedColor;
@@ -441,8 +467,10 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   protected selectColor(color: string) {
+    if (this.selectedColor === '#ffffff') {
+      this.currentTool = 'brush';
+    }
     this.selectedColor = color;
-    this.currentTool = 'brush';
   }
 
   protected selectEraser() {
@@ -451,7 +479,25 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   protected selectFillBucket() {
+    if (this.selectedColor === '#ffffff') {
+      this.selectedColor = '#000000';
+    }
     this.currentTool = 'fill';
+  }
+
+  protected selectBrush() {
+    if (this.selectedColor === '#ffffff') {
+      this.selectedColor = '#000000';
+    }
+    this.currentTool = 'brush';
+  }
+
+  protected resetCanvas() {
+    this.clearCanvas();
+    if (this.lobbyId) {
+      const clearEvent = { type: 'clear' };
+      this.drawingEventsBuffer.push(clearEvent);
+    }
   }
 
   private processDrawingEvent(drawingEvents: any[]) {
@@ -459,8 +505,27 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       console.error('Canvas context is not initialized');
       return;
     }
+
     for (let i = 0; i < drawingEvents.length; i++) {
       const drawingEvent = drawingEvents[i];
+
+      if (drawingEvent.type === 'clear') {
+        this.clearCanvas();
+        continue;
+      }
+
+      if (drawingEvent.type === 'fill') {
+        const { x, y } = drawingEvent.position;
+        FillBucket.floodFill(
+          this.canvasContext,
+          this.drawingCanvas.nativeElement,
+          x,
+          y,
+          drawingEvent.color
+        );
+        continue;
+      }
+
       this.canvasContext.strokeStyle = drawingEvent.color;
       this.canvasContext.lineWidth = drawingEvent.lineWidth;
       if (drawingEvent.type === 'start') {
@@ -484,6 +549,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       }
     }
   }
+
 
   private subscribeToDrawingEvents() {
     if (this.lobbyId) {
@@ -538,4 +604,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (score === undefined || score < 0) return 'negative-score';
     return 'default-badge';
   }
+
+  protected readonly faCheck = faCheck;
+  protected readonly faArrowPointer = faArrowPointer;
 }
