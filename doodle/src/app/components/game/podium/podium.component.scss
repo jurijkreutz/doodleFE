@@ -1,0 +1,97 @@
+.podium-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.top-three-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 40px;
+}
+
+.place-first .player-avatar-container {
+  width: 120px;
+  height: 120px;
+}
+.place-second .player-avatar-container {
+  width: 100px;
+  height: 100px;
+}
+.place-third .player-avatar-container {
+  width: 90px;
+  height: 90px;
+}
+
+.place-first .player-name {
+  font-size: 1.2rem;
+}
+.place-second .player-name {
+  font-size: 1.2rem;
+}
+.place-third .player-name {
+  font-size: 1.2rem;
+}
+
+.remaining-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 25px;
+  justify-content: center;
+}
+
+.place-other .player-avatar-container {
+  width: 70px;
+  height: 70px;
+}
+.place-other .player-name {
+  font-size: 1rem;
+}
+
+.podium-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  gap: 10px;
+}
+
+.score-badge {
+  position: absolute;
+  top: 0;
+  width: 35px;
+  height: 35px;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.player-avatar {
+  width: 100%;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.gold-badge {
+  background-color: #ffd700; /* gold */
+}
+.silver-badge {
+  background-color: #c0c0c0; /* silver */
+}
+.bronze-badge {
+  background-color: #cd7f32;
+}
+.negative-score {
+  background-color: #e32e2e; /* red */
+}
+.default-badge {
+  background-color: #658ac4; /* default */
+}

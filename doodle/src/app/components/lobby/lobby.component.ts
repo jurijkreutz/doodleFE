@@ -28,6 +28,9 @@ export class LobbyComponent implements AfterViewInit {
   protected maxMessageLength: number = 100;
   protected selectedSpeed: string = 'rapid';
 
+  protected selectedRounds: number = 5; // default = 5
+  protected roundsOptions: number[] = [1, 5, 10, 15];
+
   @ViewChild('scrollMe') myScrollContainer!: ElementRef;
 
   constructor(private route: ActivatedRoute, private router: Router,
@@ -51,6 +54,8 @@ export class LobbyComponent implements AfterViewInit {
           });
         } else if (message.sender === 'server-c4fbc994-7b44-4193-8a6d-c39d365eead6' && message.content.startsWith('change-speed:')) {
           this.selectedSpeed = message.content.split(':')[1];
+        } else if (message.sender === 'server-c4fbc994-7b44-4193-8a6d-c39d365eead6' && message.content.startsWith('change-rounds:')) {
+          this.selectedRounds = parseInt(message.content.split(':')[1]);
         } else {
           this.messages.push(message);
           setTimeout(() => this.scrollToBottom(), 50);
@@ -71,6 +76,21 @@ export class LobbyComponent implements AfterViewInit {
     };
     if (typeof this.lobbyId === "string") {
       this.stompService.sendUpdateSpeed(this.lobbyId, chatMessage);
+    }
+  }
+
+  protected onRoundsChange(newRounds: number) {
+    console.log('Rounds changed to:', newRounds);
+    this.handleRoundsChange(newRounds);
+  }
+
+  private handleRoundsChange(newRounds: number) {
+    const chatMessage = {
+      content: newRounds.toString(),
+      type: 'CHAT'
+    }
+    if (typeof this.lobbyId === "string") {
+      this.stompService.sendUpdateRounds(this.lobbyId, chatMessage);
     }
   }
 
@@ -135,7 +155,7 @@ export class LobbyComponent implements AfterViewInit {
       setTimeout(() => this.scrollToBottom(), 50);
     } else {
       this.router.navigate(['/game/' + this.lobbyId],
-        {state: { isOwner: true, speed: this.selectedSpeed }}
+        {state: { isOwner: true, speed: this.selectedSpeed, rounds: this.selectedRounds }}
       );
     }
   }

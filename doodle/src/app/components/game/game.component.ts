@@ -12,6 +12,7 @@ import {NotificationService} from "../../service/notification.service";
 import {FaIconComponent} from "@fortawesome/angular-fontawesome";
 import {faCheck, faArrowPointer} from "@fortawesome/free-solid-svg-icons";
 import {FillBucket} from "./utils/fill-bucket";
+import {PodiumComponent} from "./podium/podium.component";
 
 interface GameMessage {
   type: string;
@@ -30,7 +31,8 @@ interface GameMessage {
     NextRoundOverlayComponent,
     KeyValuePipe,
     NgClass,
-    FaIconComponent
+    FaIconComponent,
+    PodiumComponent
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -48,6 +50,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected maxGuessLength: number = 30;
   protected isWaitingForGameStart: boolean = true;
   protected isWaitingForDrawer: boolean = false;
+  protected gameIsOver: boolean = false;
   protected messages: GameMessage[] = [];
   protected messageContent: string = '';
   protected isDrawer: boolean = false;
@@ -55,6 +58,8 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected wordOverlayShown: boolean = false;
   protected wordInHeadShown: boolean = false;
   protected scores: Map<string, number> = new Map<string, number>();
+  protected totalRounds: number = 0;
+  protected remainingRounds: number = 100;
   protected correctlyGuessedWord: string = '';
   protected userThatGuessed: string = '';
   protected nextDrawer: string = '';
@@ -63,8 +68,9 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private isOwner: boolean = false;
   private selectedSpeed: string = '';
+  protected selectedRounds: number = 0;
   private lobbyId: string | null = null;
-  private playerList: Player[] = [];
+  protected playerList: Player[] = [];
   private isFirstRound: boolean = true;
   private isWaitingForServer: boolean = false;
 
@@ -89,6 +95,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.lobbyId = this.route.snapshot.paramMap.get('id');
     this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
     this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'];
+    this.selectedRounds = this.router.getCurrentNavigation()?.extras.state?.['rounds'];
     this.redirectToStartOnGameStartTimeOut();
   }
 
@@ -97,14 +104,16 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.prepareDrawingEnv(false);
     this.subscribeToWordChannel();
     if (this.isOwner) {
-      this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed);
+      this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed, this.selectedRounds);
     }
     this.initializeDrawingEventSender();
   }
 
   ngOnDestroy() {
     this.clearTimeoutAndInterval();
-    this.removeCanvasEventListeners();
+    if (!this.gameIsOver) {
+      this.removeCanvasEventListeners();
+    }
   }
 
   private initializeDrawingEventSender() {
@@ -143,6 +152,10 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   private updateLocalGameState(gameState: any) {
+    if (this.totalRounds === 0) {
+      this.totalRounds = gameState.remainingRounds;
+    }
+    this.remainingRounds = gameState.remainingRounds;
     this.isWaitingForGameStart = false;
     this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
@@ -154,6 +167,11 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     } else {
       console.error('Unexpected format for playerScores:', gameState.playerScores);
       this.scores = new Map<string, number>();
+    }
+    if (this.remainingRounds === 0) {
+      console.log('Game is over');
+      this.handleGameFinish();
+      return;
     }
     let roundTime: number = gameState.roundTime;
     this.handleCountdown(roundTime);
@@ -603,6 +621,15 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (score === secondHighest) return 'silver-badge';
     if (score === undefined || score < 0) return 'negative-score';
     return 'default-badge';
+  }
+
+  private handleGameFinish() {
+    this.gameIsOver = true;
+    this.clearTimeoutAndInterval();
+  }
+
+  protected routeBackToStart() {
+    this.router.navigate(['/menu']);
   }
 
   protected readonly faCheck = faCheck;

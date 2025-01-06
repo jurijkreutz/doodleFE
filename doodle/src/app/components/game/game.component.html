@@ -2,12 +2,15 @@
   <div class="upper-container">
     <div class="drawing-board">
       <div class="head">
-        <div class="head-left">Drawing Board</div>
+        <div class="head-left">
+          <span *ngIf="!gameIsOver" class="word-to-draw">Round {{ totalRounds - remainingRounds + 1 }} / {{ totalRounds }}</span>
+          <span *ngIf="gameIsOver" class="word-to-draw">The game is finished.</span>
+        </div>
         <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">
           You are drawing the word: <span class="word-to-draw">{{ wordToDraw }}</span>
         </div>
       </div>
-        <div id="progress-bar-container">
+        <div id="progress-bar-container" *ngIf="!gameIsOver">
           <div id="progress-bar"></div>
         </div>
       <div class="waiting-for-start-box" *ngIf="isWaitingForGameStart">
@@ -18,7 +21,13 @@
         The next drawer is {{this.nextDrawer}}.
         <div class="loader"></div>
       </div>
-        <canvas #drawingCanvas id="drawingCanvas" width="800" height="600">
+      <div class="winners-podium" *ngIf="gameIsOver">
+        <p>The game is over. Thank you for playing!</p>
+        <app-podium [scores]="scores"
+                    [playerList]="playerList">
+        </app-podium>
+      </div>
+        <canvas *ngIf="!gameIsOver" #drawingCanvas id="drawingCanvas" width="800" height="600">
         </canvas>
     </div>
     <div class="guess-section">
@@ -48,10 +57,13 @@
         </div>
       </div>
       <div class="controls">
-        <div *ngIf="!isDrawer" class="guess-input">
+        <div *ngIf="!isDrawer && !gameIsOver" class="guess-input">
           <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess" (keydown.enter)="sendGuess()"
           [attr.maxlength]="maxGuessLength">
           <button class="send-guess-button" (click)="sendGuess()">Send</button>
+        </div>
+        <div *ngIf="gameIsOver" class="guess-input">
+          <button class="send-guess-button back-to-start-button" (click)="routeBackToStart()">Play again</button>
         </div>
         <div *ngIf="isDrawer" class="color-picker">
           <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)" class="color-button">
@@ -83,4 +95,5 @@
 <app-next-round-overlay *ngIf="nextRoundScreenShown"
                         [word]="correctlyGuessedWord"
                         [user]="userThatGuessed"
-                        [nextDrawer]="nextDrawer"></app-next-round-overlay>
+                        [nextDrawer]="nextDrawer"
+                        [gameIsOver]="gameIsOver"></app-next-round-overlay>

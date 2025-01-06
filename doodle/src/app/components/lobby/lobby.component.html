@@ -33,6 +33,18 @@
   <div class="lower-container">
     <span class="code" (click)="copyToClipboard()">Code: {{ this.lobbyId }}</span>
     <div class="start-game-container">
+      <div class="round-chooser">
+        <div class="head">Rounds</div>
+        <select
+          [(ngModel)]="selectedRounds"
+          [disabled]="!isOwner"
+          (ngModelChange)="onRoundsChange($event)"
+        >
+          <option *ngFor="let round of roundsOptions" [value]="round">
+            {{ round }}
+          </option>
+        </select>
+      </div>
       <div class="game-mode-chooser">
         <div class="head">Speed</div>
         <label>

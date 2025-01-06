@@ -107,13 +107,17 @@ export class StompService {
     this.rxStomp.publish({ destination: `/app/chat.changeSpeed/${lobbyId}`, body: JSON.stringify(message) });
   }
 
-  public sendStartGame(lobbyId: string | null, speed: string) {
+  public sendUpdateRounds(lobbyId: string, message: any) {
+    this.rxStomp.publish({ destination: `/app/chat.changeRounds/${lobbyId}`, body: JSON.stringify(message) });
+  }
+
+  public sendStartGame(lobbyId: string | null, speed: string, rounds: number) {
     if (!lobbyId) {
       console.error('Lobby ID is null or undefined');
       return;
     }
     this.rxStomp.publish({ destination: `/app/chat.startGame/${lobbyId}`, body: '{}' });
-    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: JSON.stringify({ speed: speed }) });
+    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: JSON.stringify({ speed: speed, rounds: rounds }) });
   }
 
   public subscribeToGuessNotification(lobbyId: string, callback: (message: any) => void) {

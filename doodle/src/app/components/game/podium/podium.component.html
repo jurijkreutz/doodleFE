@@ -1,0 +1,83 @@
+<div class="podium-container">
+  <div class="top-three-container">
+    <!-- 1st place -->
+    <div
+      class="podium-place place-first"
+      *ngIf="sortedScores.length > 0"
+    >
+      <div class="player-avatar-container">
+        <img
+          [src]="getAvatarUrl(sortedScores[0][0])"
+          alt="1st place avatar"
+          class="player-avatar"
+        />
+        <div
+          class="score-badge"
+          [ngClass]="getScoreClass(sortedScores[0][0])"
+        >
+          {{ sortedScores[0][1] }}
+        </div>
+      </div>
+      <div class="player-name">{{ sortedScores[0][0] }}</div>
+    </div>
+    <!-- 2nd place -->
+    <div
+      class="podium-place place-second"
+      *ngIf="sortedScores.length > 1"
+    >
+      <div class="player-avatar-container">
+        <img
+          [src]="getAvatarUrl(sortedScores[1][0])"
+          alt="2nd place avatar"
+          class="player-avatar"
+        />
+        <div
+          class="score-badge"
+          [ngClass]="getScoreClass(sortedScores[1][0])"
+        >
+          {{ sortedScores[1][1] }}
+        </div>
+      </div>
+      <div class="player-name">{{ sortedScores[1][0] }}</div>
+    </div>
+    <!-- 3rd place -->
+    <div
+      class="podium-place place-third"
+      *ngIf="sortedScores.length > 2"
+    >
+      <div class="player-avatar-container">
+        <img
+          [src]="getAvatarUrl(sortedScores[2][0])"
+          alt="3rd place avatar"
+          class="player-avatar"
+        />
+        <div
+          class="score-badge"
+          [ngClass]="getScoreClass(sortedScores[2][0])"
+        >
+          {{ sortedScores[2][1] }}
+        </div>
+      </div>
+      <div class="player-name">{{ sortedScores[2][0] }}</div>
+    </div>
+  </div>
+  <!-- EVERYONE ELSE -->
+  <div class="remaining-container" *ngIf="sortedScores.length > 3">
+    <div
+      class="podium-place place-other"
+      *ngFor="let player of sortedScores.slice(3)"
+    >
+      <div class="player-avatar-container">
+        <img
+          [src]="getAvatarUrl(player[0])"
+          alt="Avatar"
+          class="player-avatar"
+        />
+        <div class="score-badge" [ngClass]="getScoreClass(player[0])">
+          {{ player[1] }}
+        </div>
+      </div>
+      <div class="player-name">{{ player[0] }}</div>
+    </div>
+  </div>
+</div>

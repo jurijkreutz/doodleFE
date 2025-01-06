@@ -2,7 +2,8 @@
   <div class="overlay-block">
     <h2 class="correct">{{ user }}</h2>
     <h3>{{ word }}</h3>
-    <h2>The next drawer is {{ nextDrawer }}.</h2>
+    <h2 *ngIf="!gameIsOver">The next drawer is {{ nextDrawer }}.</h2>
+    <h2 *ngIf="gameIsOver">The game is over. Let's see the ranking!</h2>
     <div class="progress-bar">
       <div class="progress"></div>
     </div>
