@@ -1,6 +1,8 @@
 export interface JoinLobbyResponse {
   id: string;
   players: string[];
+  rounds: string,
+  speed: string
 }
 
 export interface IsOwnerResponse {

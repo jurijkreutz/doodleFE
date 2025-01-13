@@ -68,7 +68,7 @@ export class MenuComponent {
         this.triggerFadeOut();
         setTimeout(() => {
         this.router.navigate(['/lobby/' + response.id],
-          { state: { players: response.players } });
+          { state: { players: response.players, rounds: response.rounds, speed: response.speed } });
         }, 300);
       },
       (error: HttpErrorResponse) => {

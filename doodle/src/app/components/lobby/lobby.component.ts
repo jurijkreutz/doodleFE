@@ -26,8 +26,8 @@ export class LobbyComponent implements AfterViewInit {
   protected newPlayerBubble: { username: string, avatar: string } | null = null;
   protected messageContent: string = '';
   protected maxMessageLength: number = 100;
-  protected selectedSpeed: string = 'rapid';
 
+  protected selectedSpeed: string = 'rapid';
   protected selectedRounds: number = 5; // default = 5
   protected roundsOptions: number[] = [1, 5, 10, 15];
 
@@ -38,6 +38,8 @@ export class LobbyComponent implements AfterViewInit {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
     this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
     this.playerList = this.router.getCurrentNavigation()?.extras.state?.['players'] || [];
+    this.selectedRounds = parseInt(this.router.getCurrentNavigation()?.extras.state?.['rounds']) || 5;
+    this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'] || 'rapid';
   }
 
   ngAfterViewInit() {
