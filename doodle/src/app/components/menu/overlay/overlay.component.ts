@@ -43,6 +43,7 @@ export class OverlayComponent implements OnInit {
 
   ngOnInit() {
     this.heartBeatService.stopHeartbeat();
+    this.preloadAvatars();
   }
 
   onNameEnter() {
@@ -80,5 +81,12 @@ export class OverlayComponent implements OnInit {
         this.animationClass = 'idle';
       }, 200);
     }, 200);
+  }
+
+  private preloadAvatars() {
+    for (let i = 1; i <= this.AVATAR_COUNT; i++) {
+      const img = new Image();
+      img.src = `assets/avatars/avatar-${i}.webp`;
+    }
   }
 }
