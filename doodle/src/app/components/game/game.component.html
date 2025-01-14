@@ -21,6 +21,18 @@
         The next drawer is {{this.nextDrawer}}.
         <div class="loader"></div>
       </div>
+      <div class="waiting-for-start-box" *ngIf="currentTool === 'none' && isDrawer && !isWaitingForGameStart &&
+      !isWaitingForDrawer && !gameIsOver">
+        Choose a tool to start drawing!
+        <div class="start-tool-picker">
+        <button class="brush-button" (click)="selectBrush()">
+          <img src="assets/game/brush.webp" alt="Brush" class="brush-icon">
+        </button>
+        <button class="fill-button" (click)="selectFillBucket()">
+          <img src="assets/game/bucket.webp" alt="Fill" class="fill-icon">
+        </button>
+        </div>
+      </div>
       <div class="winners-podium" *ngIf="gameIsOver">
         <p>The game is over. Thank you for playing!</p>
         <app-podium [scores]="scores"

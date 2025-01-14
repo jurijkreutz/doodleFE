@@ -462,6 +462,17 @@ button {
   padding: 10px 0;
 }
 
+.start-tool-picker {
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+
+  .brush-icon, .fill-icon {
+    height: 80px;
+  }
+}
+
 canvas[id^="confetti-"] {
   z-index: 999999 !important;
 }

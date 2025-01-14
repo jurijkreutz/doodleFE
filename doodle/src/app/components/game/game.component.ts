@@ -373,11 +373,20 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (!isDrawer) {
       this.removeCanvasEventListeners();
     }
-
+    this.resetDrawingEnvToCleanState();
     this.isDrawer = isDrawer;
     this.drawingEventsBuffer = [];
     this.setupCanvas();
     this.subscribeToDrawingEvents();
+  }
+
+  private resetDrawingEnvToCleanState() {
+    this.clearCanvas();
+    this.isDrawing = false;
+    if (this.canvasContext) {
+      this.canvasContext.closePath();
+    }
+    this.currentTool = 'none';
   }
 
   private setupCanvas() {
@@ -451,7 +460,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   private draw(event: MouseEvent) {
-    if (!this.isDrawing || !this.isDrawer) return;
+    if (!this.isDrawing || !this.isDrawer || this.currentTool === 'none') return;
     const pos = this.getMousePosition(event);
     this.canvasContext.lineTo(pos.x, pos.y);
     this.canvasContext.stroke();
