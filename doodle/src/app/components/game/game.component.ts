@@ -434,7 +434,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
     if (this.isDrawer) {
       canvas.addEventListener('mousedown', this.boundStartDrawing);
-      canvas.addEventListener('mousemove', this.boundDraw);
+      canvas.addEventListener('mousemove', this.boundDrawDebounced);
       canvas.addEventListener('mouseup', this.boundStopDrawing);
       canvas.addEventListener('mouseout', this.boundStopDrawing);
     }
@@ -494,6 +494,8 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.canvasContext.strokeStyle = this.selectedColor;
     this.addDrawingEventToBuffer('start', pos);
   }
+
+  private boundDrawDebounced = this.debounce(this.draw.bind(this), 10); // 10ms delay
 
   private draw(event: MouseEvent) {
     if (!this.isDrawing || !this.isDrawer || this.currentTool === 'none') return;
@@ -684,6 +686,14 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   protected routeBackToStart() {
     this.router.navigate(['/menu']);
+  }
+
+  private debounce(func: (...args: any[]) => void, delay: number) {
+    let timeoutId: any;
+    return (...args: any[]) => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
   }
 
   protected readonly faCheck = faCheck;
