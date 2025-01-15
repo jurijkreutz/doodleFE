@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, OnDestroy, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {KeyValuePipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
@@ -44,7 +44,11 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
   private sendInterval = 10; // ms
+  private maxSendInterval = 50; // max interval when user is drawing fast
   private drawingEventsBuffer: any[] = [];
+  private lastSentSequence = 0;
+  private receivedDrawingEvents: any[] = [];
+  private sendTimerId: any = null;
 
   // protected values for template binding
   protected maxGuessLength: number = 30;
@@ -91,7 +95,8 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   constructor(private route: ActivatedRoute,
               private stompService: StompService,
               private notificationService: NotificationService,
-              private router: Router) {
+              private router: Router,
+              private ngZone: NgZone) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
     this.isOwner = this.router.getCurrentNavigation()?.extras.state?.['isOwner']
     this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'];
@@ -114,14 +119,45 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (!this.gameIsOver) {
       this.removeCanvasEventListeners();
     }
+    clearInterval(this.sendTimerId)
   }
 
   private initializeDrawingEventSender() {
-    setInterval(() => {
-      if (this.drawingEventsBuffer.length > 0) {
-        this.sendBufferedDrawingEvents();
-      }
+    this.sendTimerId = setInterval(() => {
+      this.adaptiveSendEvents();
     }, this.sendInterval);
+  }
+
+  private adaptiveSendEvents() {
+    if (this.drawingEventsBuffer.length === 0) return;
+
+    // Prioritize "stop" events
+    const stopEventIndex = this.drawingEventsBuffer.findIndex(event => event.type === 'stop');
+    if (stopEventIndex !== -1) {
+      const stopEvent = this.drawingEventsBuffer.splice(stopEventIndex, 1)[0];
+      this.sendDrawingEventsImmediately([stopEvent]);
+    }
+
+    if (this.drawingEventsBuffer.length > 0) {
+      this.sendBufferedDrawingEvents();
+
+      // Adjust send interval based on buffer size
+      if (this.drawingEventsBuffer.length > 5) {
+        this.sendInterval = Math.max(5, this.sendInterval * 0.8); // Decrease interval (send more frequently)
+      } else {
+        this.sendInterval = Math.min(this.maxSendInterval, this.sendInterval * 1.1); // Increase interval (send less frequently)
+      }
+
+      // Reset the timer with the new interval
+      clearInterval(this.sendTimerId);
+      this.sendTimerId = setInterval(() => this.adaptiveSendEvents(), this.sendInterval);
+    }
+  }
+
+  private sendDrawingEventsImmediately(events: any[]) {
+    if (this.lobbyId) {
+      this.stompService.sendDrawingEvents(this.lobbyId, events);
+    }
   }
 
   private subscribeToGame() {
@@ -476,11 +512,13 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private addDrawingEventToBuffer(type: string, pos: { x: number; y: number } | null) {
     if (this.lobbyId) {
-      const drawingEvent = {
+      this.lastSentSequence++;
+      const drawingEvent: any = {
         type,
         position: pos,
         color: this.selectedColor,
-        lineWidth: this.canvasContext.lineWidth
+        lineWidth: this.canvasContext.lineWidth,
+        sequence: this.lastSentSequence
       };
       this.drawingEventsBuffer.push(drawingEvent);
     }
@@ -528,52 +566,59 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   private processDrawingEvent(drawingEvents: any[]) {
+    if (this.isDrawer) return;
+
+    this.receivedDrawingEvents.push(...drawingEvents);
+    this.receivedDrawingEvents.sort((a, b) => a.sequence - b.sequence);
+
+    // Process events immediately using requestAnimationFrame
+    this.ngZone.runOutsideAngular(() => {
+      const processEvents = () => {
+        if (this.receivedDrawingEvents.length > 0) {
+          const drawingEvent = this.receivedDrawingEvents.shift();
+          if (drawingEvent) {
+            this.applyDrawingEvent(drawingEvent);
+          }
+          requestAnimationFrame(processEvents); // Continue processing in the next frame
+        }
+      };
+      requestAnimationFrame(processEvents);
+    });
+  }
+
+  private async applyDrawingEvent(drawingEvent: any) {
     if (!this.canvasContext) {
       console.error('Canvas context is not initialized');
       return;
     }
 
-    for (let i = 0; i < drawingEvents.length; i++) {
-      const drawingEvent = drawingEvents[i];
+    if (drawingEvent.type === 'clear') {
+      this.clearCanvas();
+      return;
+    }
 
-      if (drawingEvent.type === 'clear') {
-        this.clearCanvas();
-        continue;
-      }
+    if (drawingEvent.type === 'fill') {
+      const { x, y } = drawingEvent.position!;
+      FillBucket.floodFill(
+        this.canvasContext,
+        this.drawingCanvas.nativeElement,
+        x,
+        y,
+        drawingEvent.color!
+      );
+      return;
+    }
 
-      if (drawingEvent.type === 'fill') {
-        const { x, y } = drawingEvent.position;
-        FillBucket.floodFill(
-          this.canvasContext,
-          this.drawingCanvas.nativeElement,
-          x,
-          y,
-          drawingEvent.color
-        );
-        continue;
-      }
-
-      this.canvasContext.strokeStyle = drawingEvent.color;
-      this.canvasContext.lineWidth = drawingEvent.lineWidth;
-      if (drawingEvent.type === 'start') {
-        this.canvasContext.beginPath();
-        this.canvasContext.moveTo(drawingEvent.position.x, drawingEvent.position.y);
-      } else if (drawingEvent.type === 'draw') {
-        if (i > 0) {
-          const prevEvent = drawingEvents[i - 1];
-          this.canvasContext.quadraticCurveTo(
-            prevEvent.position.x,
-            prevEvent.position.y,
-            drawingEvent.position.x,
-            drawingEvent.position.y
-          );
-        } else {
-          this.canvasContext.lineTo(drawingEvent.position.x, drawingEvent.position.y);
-        }
-        this.canvasContext.stroke();
-      } else if (drawingEvent.type === 'stop') {
-        this.canvasContext.closePath();
-      }
+    this.canvasContext.strokeStyle = drawingEvent.color!;
+    this.canvasContext.lineWidth = drawingEvent.lineWidth!;
+    if (drawingEvent.type === 'start') {
+      this.canvasContext.beginPath();
+      this.canvasContext.moveTo(drawingEvent.position!.x, drawingEvent.position!.y);
+    } else if (drawingEvent.type === 'draw') {
+      this.canvasContext.lineTo(drawingEvent.position!.x, drawingEvent.position!.y);
+      this.canvasContext.stroke();
+    } else if (drawingEvent.type === 'stop') {
+      this.canvasContext.closePath();
     }
   }
 
