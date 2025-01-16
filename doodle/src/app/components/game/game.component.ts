@@ -43,12 +43,14 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
-  private sendInterval = 10; // ms
-  private maxSendInterval = 50; // max interval when user is drawing fast
-  private drawingEventsBuffer: any[] = [];
   private lastSentSequence = 0;
   private receivedDrawingEvents: any[] = [];
   private sendTimerId: any = null;
+  private currentStrokePoints: { x: number; y: number }[] = [];
+  private partialStrokeTimerId: any = null;
+  private isInStroke = false;
+  private lastPoint: { x: number; y: number } | null = null;
+
 
   // protected values for template binding
   protected maxGuessLength: number = 30;
@@ -111,7 +113,11 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (this.isOwner) {
       this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed, this.selectedRounds);
     }
-    this.initializeDrawingEventSender();
+    this.partialStrokeTimerId = setInterval(() => {
+      if (this.isDrawing) {
+        this.sendPartialStrokeUpdate();
+      }
+    }, 1000 / 30);
   }
 
   ngOnDestroy() {
@@ -120,28 +126,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       this.removeCanvasEventListeners();
     }
     clearInterval(this.sendTimerId)
-  }
-
-  private initializeDrawingEventSender() {
-    this.sendTimerId = setInterval(() => {
-      this.adaptiveSendEvents();
-    }, this.sendInterval);
-  }
-
-  private adaptiveSendEvents() {
-    // If there's nothing new, do nothing:
-    if (this.drawingEventsBuffer.length === 0) return;
-    // Send everything in the buffer (including stop events) in proper sequence:
-    this.sendBufferedDrawingEvents();
-    // Adjust send interval based on buffer size, etc.:
-    if (this.drawingEventsBuffer.length > 5) {
-      this.sendInterval = Math.max(5, this.sendInterval * 0.8);
-    } else {
-      this.sendInterval = Math.min(this.maxSendInterval, this.sendInterval * 1.1);
-    }
-    // Reset the timer with the new interval
-    clearInterval(this.sendTimerId);
-    this.sendTimerId = setInterval(() => this.adaptiveSendEvents(), this.sendInterval);
   }
 
   private subscribeToGame() {
@@ -395,7 +379,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     }
     this.resetDrawingEnvToCleanState();
     this.isDrawer = isDrawer;
-    this.drawingEventsBuffer = [];
     this.setupCanvas();
     this.subscribeToDrawingEvents();
   }
@@ -451,6 +434,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private startDrawing(event: MouseEvent) {
     if (!this.isDrawer) return;
 
+    this.currentStrokePoints = [];
     const pos = this.getMousePosition(event);
 
     if (this.currentTool === 'fill') {
@@ -467,17 +451,17 @@ export class GameComponent implements AfterViewInit, OnDestroy{
           position: { x: pos.x, y: pos.y },
           color: this.selectedColor
         };
-        this.drawingEventsBuffer.push(fillEvent);
+        this.stompService.sendDrawingEvents(this.lobbyId, [fillEvent]);
       }
 
       return;
     }
 
     this.isDrawing = true;
+    this.currentStrokePoints.push(pos);
     this.canvasContext.beginPath();
     this.canvasContext.moveTo(pos.x, pos.y);
     this.canvasContext.strokeStyle = this.selectedColor;
-    this.addDrawingEventToBuffer('start', pos);
   }
 
   private draw(event: MouseEvent) {
@@ -485,34 +469,45 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     const pos = this.getMousePosition(event);
     this.canvasContext.lineTo(pos.x, pos.y);
     this.canvasContext.stroke();
-    this.addDrawingEventToBuffer('draw', pos);
+    this.currentStrokePoints.push(pos);
   }
 
   private stopDrawing() {
     if (!this.isDrawing) return;
     this.isDrawing = false;
     this.canvasContext.closePath();
-    this.addDrawingEventToBuffer('stop', null);
-  }
 
-  private addDrawingEventToBuffer(type: string, pos: { x: number; y: number } | null) {
+    // 1) Manually send a final partial update of whatever is in currentStrokePoints
+    this.sendPartialStrokeUpdate(); // (We'll create this method)
+
+    // 2) Now send a “stop” event so guessers can closePath()
     if (this.lobbyId) {
-      this.lastSentSequence++;
-      const drawingEvent: any = {
-        type,
-        position: pos,
-        color: this.selectedColor,
-        lineWidth: this.canvasContext.lineWidth,
-        sequence: this.lastSentSequence
-      };
-      this.drawingEventsBuffer.push(drawingEvent);
+      const stopEvent = { type: 'stop' };
+      this.stompService.sendDrawingEvents(this.lobbyId, [stopEvent]);
     }
   }
 
-  private sendBufferedDrawingEvents() {
-    if (this.lobbyId && this.drawingEventsBuffer.length > 0) {
-      this.stompService.sendDrawingEvents(this.lobbyId, this.drawingEventsBuffer);
-      this.drawingEventsBuffer = [];
+  private sendPartialStrokeUpdate() {
+    if (!this.lobbyId) return;
+
+    // If we have points to send:
+    if (this.currentStrokePoints.length > 0) {
+      // Copy them out so we can clear the array
+      const points = this.currentStrokePoints.slice();
+      this.currentStrokePoints = [];
+
+      // Construct an event that has *all* the points in one go
+      this.lastSentSequence++;
+      const partialStrokeEvent = {
+        type: 'partial-stroke',
+        sequence: this.lastSentSequence,
+        points: points,
+        color: this.selectedColor,
+        lineWidth: this.canvasContext.lineWidth
+      };
+
+      // Send it right away
+      this.stompService.sendDrawingEvents(this.lobbyId, [partialStrokeEvent]);
     }
   }
 
@@ -546,7 +541,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.clearCanvas();
     if (this.lobbyId) {
       const clearEvent = { type: 'clear' };
-      this.drawingEventsBuffer.push(clearEvent);
+      this.stompService.sendDrawingEvents(this.lobbyId, [clearEvent]);
     }
   }
 
@@ -596,14 +591,37 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
     this.canvasContext.strokeStyle = drawingEvent.color!;
     this.canvasContext.lineWidth = drawingEvent.lineWidth!;
-    if (drawingEvent.type === 'start') {
-      this.canvasContext.beginPath();
-      this.canvasContext.moveTo(drawingEvent.position!.x, drawingEvent.position!.y);
-    } else if (drawingEvent.type === 'draw') {
-      this.canvasContext.lineTo(drawingEvent.position!.x, drawingEvent.position!.y);
-      this.canvasContext.stroke();
-    } else if (drawingEvent.type === 'stop') {
+    if (drawingEvent.type === 'partial-stroke') {
+      // For partial-stroke, we might do something like:
+      this.canvasContext.strokeStyle = drawingEvent.color;
+      this.canvasContext.lineWidth = drawingEvent.lineWidth;
+
+      // Possibly keep track if we're "in a stroke" or not:
+      if (!this.isInStroke) {
+        this.isInStroke = true;
+        this.canvasContext.beginPath();
+        this.lastPoint = null; // We'll track the last point ourselves
+      }
+
+      // Replay each point in drawingEvent.points
+      drawingEvent.points.forEach((pt: {x: number; y: number}, index: number) => {
+        if (!this.lastPoint) {
+          // If we have no "lastPoint," moveTo the first coordinate
+          this.canvasContext.moveTo(pt.x, pt.y);
+        } else {
+          // Otherwise lineTo
+          this.canvasContext.lineTo(pt.x, pt.y);
+          this.canvasContext.stroke();
+        }
+        this.lastPoint = pt;
+      });
+    }
+
+    else if (drawingEvent.type === 'stop') {
+      // Finish the stroke
       this.canvasContext.closePath();
+      this.isInStroke = false;
+      this.lastPoint = null;
     }
   }
 
