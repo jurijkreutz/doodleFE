@@ -129,35 +129,19 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   private adaptiveSendEvents() {
+    // If there's nothing new, do nothing:
     if (this.drawingEventsBuffer.length === 0) return;
-
-    // Prioritize "stop" events
-    const stopEventIndex = this.drawingEventsBuffer.findIndex(event => event.type === 'stop');
-    if (stopEventIndex !== -1) {
-      const stopEvent = this.drawingEventsBuffer.splice(stopEventIndex, 1)[0];
-      this.sendDrawingEventsImmediately([stopEvent]);
+    // Send everything in the buffer (including stop events) in proper sequence:
+    this.sendBufferedDrawingEvents();
+    // Adjust send interval based on buffer size, etc.:
+    if (this.drawingEventsBuffer.length > 5) {
+      this.sendInterval = Math.max(5, this.sendInterval * 0.8);
+    } else {
+      this.sendInterval = Math.min(this.maxSendInterval, this.sendInterval * 1.1);
     }
-
-    if (this.drawingEventsBuffer.length > 0) {
-      this.sendBufferedDrawingEvents();
-
-      // Adjust send interval based on buffer size
-      if (this.drawingEventsBuffer.length > 5) {
-        this.sendInterval = Math.max(5, this.sendInterval * 0.8); // Decrease interval (send more frequently)
-      } else {
-        this.sendInterval = Math.min(this.maxSendInterval, this.sendInterval * 1.1); // Increase interval (send less frequently)
-      }
-
-      // Reset the timer with the new interval
-      clearInterval(this.sendTimerId);
-      this.sendTimerId = setInterval(() => this.adaptiveSendEvents(), this.sendInterval);
-    }
-  }
-
-  private sendDrawingEventsImmediately(events: any[]) {
-    if (this.lobbyId) {
-      this.stompService.sendDrawingEvents(this.lobbyId, events);
-    }
+    // Reset the timer with the new interval
+    clearInterval(this.sendTimerId);
+    this.sendTimerId = setInterval(() => this.adaptiveSendEvents(), this.sendInterval);
   }
 
   private subscribeToGame() {
@@ -431,6 +415,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
     this.canvasContext.lineWidth = 5;
     this.canvasContext.lineCap = 'round';
+    this.canvasContext.lineJoin = 'round';
 
     if (this.isDrawer) {
       canvas.addEventListener('mousedown', this.boundStartDrawing);
