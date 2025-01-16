@@ -568,21 +568,21 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   private processDrawingEvent(drawingEvents: any[]) {
     if (this.isDrawer) return;
 
+    // Combine & sort everything by sequence:
     this.receivedDrawingEvents.push(...drawingEvents);
     this.receivedDrawingEvents.sort((a, b) => a.sequence - b.sequence);
 
-    // Process events immediately using requestAnimationFrame
+    // Now apply them all at once in the correct order.
+    // Using runOutsideAngular is optional but helps prevent performance hits:
     this.ngZone.runOutsideAngular(() => {
-      const processEvents = () => {
-        if (this.receivedDrawingEvents.length > 0) {
-          const drawingEvent = this.receivedDrawingEvents.shift();
-          if (drawingEvent) {
-            this.applyDrawingEvent(drawingEvent);
+      requestAnimationFrame(() => {
+        while (this.receivedDrawingEvents.length) {
+          const event = this.receivedDrawingEvents.shift();
+          if (event) {
+            this.applyDrawingEvent(event);
           }
-          requestAnimationFrame(processEvents); // Continue processing in the next frame
         }
-      };
-      requestAnimationFrame(processEvents);
+      });
     });
   }
 
