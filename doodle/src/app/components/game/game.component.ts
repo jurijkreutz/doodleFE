@@ -10,7 +10,7 @@ import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
 import {NotificationService} from "../../service/notification.service";
 import {FaIconComponent} from "@fortawesome/angular-fontawesome";
-import {faCheck, faArrowPointer} from "@fortawesome/free-solid-svg-icons";
+import {faCheck, faArrowPointer, faPaintBrush} from "@fortawesome/free-solid-svg-icons";
 import {FillBucket} from "./utils/fill-bucket";
 import {PodiumComponent} from "./podium/podium.component";
 
@@ -166,14 +166,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
     this.playerList = gameState.players;
-    if (typeof gameState.playerScores === 'object' && !Array.isArray(gameState.playerScores)) {
-      this.scores = new Map<string, number>(Object.entries(gameState.playerScores));
-    } else if (Array.isArray(gameState.playerScores)) {
-      this.scores = new Map<string, number>(gameState.playerScores);
-    } else {
-      console.error('Unexpected format for playerScores:', gameState.playerScores);
-      this.scores = new Map<string, number>();
-    }
+    this.updatePlayerScores(gameState);
     if (this.remainingRounds === 0) {
       console.log('Game is over');
       this.handleGameFinish();
@@ -181,6 +174,17 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     }
     let roundTime: number = gameState.roundTime;
     this.handleCountdown(roundTime);
+  }
+
+  private updatePlayerScores(gameState: any) {
+    if (typeof gameState.playerScores === 'object' && !Array.isArray(gameState.playerScores)) {
+      const sortedEntries = Object.entries(gameState.playerScores as Record<string, number>)
+        .sort((a, b) => b[1] - a[1]);
+      this.scores = new Map<string, number>(sortedEntries);
+    } else if (Array.isArray(gameState.playerScores)) {
+      const sortedArray = (gameState.playerScores as [string, number][]).sort((a, b) => b[1] - a[1]);
+      this.scores = new Map<string, number>(sortedArray);
+    }
   }
 
   private handleCountdown(roundTime: number) {
@@ -720,4 +724,5 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   protected readonly faCheck = faCheck;
   protected readonly faArrowPointer = faArrowPointer;
+  protected readonly faPaintBrush = faPaintBrush;
 }

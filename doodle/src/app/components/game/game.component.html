@@ -9,6 +9,9 @@
         <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">
           You are drawing the word: <span class="word-to-draw">{{ wordToDraw }}</span>
         </div>
+        <div class="head-right" *ngIf="wordToDraw === '' && !wordInHeadShown">
+          Current drawer: <span class="word-to-draw">{{ nextDrawer }}</span>
+        </div>
       </div>
         <div id="progress-bar-container" *ngIf="!gameIsOver">
           <div id="progress-bar"></div>
@@ -51,7 +54,9 @@
               {{ player.value }}
             </div>
           </div>
-          <div class="player-name">{{ player.key }}</div>
+          <div class="player-name"><span>{{ player.key }}</span>
+            <fa-icon *ngIf="nextDrawer === player.key" [icon]="faPaintBrush" class="current-drawer-icon"></fa-icon>
+          </div>
         </div>
       </div>
       <div #scrollMe class="guess-window">
