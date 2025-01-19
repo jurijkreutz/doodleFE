@@ -4,6 +4,16 @@
       <div class="head">
         <div class="head-left">
           <span *ngIf="!gameIsOver" class="word-to-draw">Round {{ totalRounds - remainingRounds + 1 }} / {{ totalRounds }}</span>
+          <div *ngIf="!gameIsOver"
+               class="remaining-drawers-in-round-info"
+               title="Remaining drawings in this round: {{ playerList.length - drawingsInCurrentRound }}">
+            <div class="grid-container" [ngStyle]="{'grid-template-columns': 'repeat(' + roundBoxColumns + ', 1rem)'}">
+              <div *ngFor="let player of playerList; let i = index"
+                   class="draw-box"
+                   [ngClass]="{'filled-box': i < drawingsInCurrentRound}">
+              </div>
+            </div>
+          </div>
           <span *ngIf="gameIsOver" class="word-to-draw">The game is finished.</span>
         </div>
         <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">

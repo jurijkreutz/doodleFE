@@ -1,6 +1,6 @@
 import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
-import {KeyValuePipe, NgClass, NgForOf, NgIf} from "@angular/common";
+import {KeyValuePipe, NgClass, NgForOf, NgIf, NgStyle} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
@@ -32,7 +32,8 @@ interface GameMessage {
     KeyValuePipe,
     NgClass,
     FaIconComponent,
-    PodiumComponent
+    PodiumComponent,
+    NgStyle
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
@@ -161,12 +162,17 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (this.totalRounds === 0) {
       this.totalRounds = gameState.remainingRounds;
     }
+    this.drawingsInCurrentRound++;
+    if (gameState.remainingRounds < this.remainingRounds) {
+      this.drawingsInCurrentRound = 1;
+    }
     this.remainingRounds = gameState.remainingRounds;
     this.isWaitingForGameStart = false;
     this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
     this.playerList = gameState.players;
     this.updatePlayerScores(gameState);
+    this.updateRemainingDrawingsInRound(gameState.players);
     if (this.remainingRounds === 0) {
       console.log('Game is over');
       this.handleGameFinish();
@@ -174,6 +180,13 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     }
     let roundTime: number = gameState.roundTime;
     this.handleCountdown(roundTime);
+  }
+
+  protected roundBoxColumns: number = 0;
+  protected drawingsInCurrentRound: number = 0;
+
+  private updateRemainingDrawingsInRound(playerList: Player[]) {
+    this.roundBoxColumns = Math.ceil(Math.sqrt(playerList.length));
   }
 
   private updatePlayerScores(gameState: any) {
