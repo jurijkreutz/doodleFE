@@ -3,7 +3,10 @@
     <div class="drawing-board">
       <div class="head">
         <div class="head-left">
-          <span *ngIf="!gameIsOver" class="word-to-draw">Round {{ totalRounds - remainingRounds + 1 }} / {{ totalRounds }}</span>
+          <span *ngIf="!gameIsOver && !isWaitingForGameStart" class="word-to-draw">
+            Round {{ totalRounds - remainingRounds + 1 }} / {{ totalRounds }}
+          </span>
+          <span *ngIf="isWaitingForGameStart">The game will start soon...</span>
           <div *ngIf="!gameIsOver"
                class="remaining-drawers-in-round-info"
                title="Remaining drawings in this round: {{ playerList.length - drawingsInCurrentRound }}">
@@ -19,7 +22,7 @@
         <div class="head-right" *ngIf="wordToDraw != '' && wordInHeadShown">
           You are drawing the word: <span class="word-to-draw">{{ wordToDraw }}</span>
         </div>
-        <div class="head-right" *ngIf="wordToDraw === '' && !wordInHeadShown">
+        <div class="head-right" *ngIf="wordToDraw === '' && !wordInHeadShown && !isWaitingForGameStart">
           Current drawer: <span class="word-to-draw">{{ nextDrawer }}</span>
         </div>
       </div>
