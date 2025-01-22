@@ -1,7 +1,6 @@
 import {Injectable} from '@angular/core';
 import {IMessage, Message} from "@stomp/stompjs";
 import {RxStomp, RxStompConfig} from "@stomp/rx-stomp";
-import {NotificationService} from "../notification.service";
 import {WordToDraw} from "../../models/response.models";
 import SockJS from "sockjs-client";
 import {environment} from "../../../environments/environment";
@@ -14,7 +13,7 @@ export class StompService {
 
   private rxStomp: RxStomp;
 
-  constructor(private notificationService: NotificationService) {
+  constructor() {
     this.rxStomp = new RxStomp();
     this.configureStomp();
   }
@@ -36,7 +35,6 @@ export class StompService {
       reconnectDelay: 200,
       debug: (msg: string) => {
         console.log('- Stomp: ' + msg);
-        this.notificationService.showError('Problems with the connection for drawing and guessing. Try again.')
       },
     };
 
