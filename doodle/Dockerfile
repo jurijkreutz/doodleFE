@@ -6,18 +6,23 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build -- --configuration=production
+# Build for production by default (override with --build-arg)
+ARG ENV=production
+RUN npm run build -- --configuration=$ENV
 
 FROM nginx:1.21-alpine
 
-RUN rm -rf /usr/share/nginx/html/*
+# Remove default Nginx configs
+RUN rm -rf /etc/nginx/conf.d/*
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy all Nginx configs (both production and staging)
+COPY nginx/*.conf /etc/nginx/conf.d/
 
+# Copy built files
 COPY --from=build /app/dist/doodle /usr/share/nginx/html
 
-# Expose port 80
-EXPOSE 80
+# Expose both HTTP and HTTPS ports
+EXPOSE 80 443
 
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Use environment-specific config at runtime
+CMD ["sh", "-c", "cp /etc/nginx/conf.d/${NGINX_ENV}.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
