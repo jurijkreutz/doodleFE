@@ -1,9 +1,7 @@
 import {Injectable} from '@angular/core';
 import {IMessage, Message} from "@stomp/stompjs";
 import {RxStomp, RxStompConfig} from "@stomp/rx-stomp";
-import {map, Observable} from "rxjs";
 import {NotificationService} from "../notification.service";
-import {Router} from "@angular/router";
 import {WordToDraw} from "../../models/response.models";
 import SockJS from "sockjs-client";
 import {environment} from "../../../environments/environment";
@@ -16,27 +14,29 @@ export class StompService {
 
   private rxStomp: RxStomp;
 
-  constructor(private notificationService: NotificationService, private router: Router) {
+  constructor(private notificationService: NotificationService) {
     this.rxStomp = new RxStomp();
     this.configureStomp();
   }
 
   private configureStomp() {
-    // Remove the brokerURL logic and use webSocketFactory instead
     const config: RxStompConfig = {
-      // Use SockJS instead of native WebSocket
       webSocketFactory: () => {
         const wsUrl = environment.production
           ? `${window.location.origin}/ws`
           : environment.WEBSOCKET_URL;
-
-        return new SockJS(wsUrl);
+        const sock = new SockJS(wsUrl);
+        sock.onerror = (error) => {
+          console.error('SockJS error:', error);
+        };
+        return sock;
       },
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
       reconnectDelay: 200,
       debug: (msg: string) => {
         console.log('- Stomp: ' + msg);
+        this.notificationService.showError('Problems with the connection for drawing and guessing. Try again.')
       },
     };
 
@@ -147,38 +147,6 @@ export class StompService {
     this.rxStomp.watch('/user/queue/draw-word').subscribe((message: IMessage) => {
       callback(JSON.parse(message.body));
     });
-  }
-
-  public errorMessages(): Observable<string> {
-    return this.rxStomp.watch('/user/queue/errors').pipe(
-      map((message: IMessage) => {
-        return message.body;
-      })
-    );
-  }
-
-  private subscribeToErrors() {
-    this.errorMessages().subscribe(message => {
-      let displayMessage = message;
-      displayMessage = this.parseJson(message, displayMessage);
-      console.error('Error from server:', displayMessage);
-      this.notificationService.showAsyncError(displayMessage + ' Redirecting to start...')
-        .then(() => {
-          this.router.navigate(['/']);
-        });
-    });
-  }
-
-  private parseJson(message: string, displayMessage: string) {
-    try {
-      const parsedMessage = JSON.parse(message);
-      if (parsedMessage && parsedMessage.message) {
-        displayMessage = parsedMessage.message;
-      }
-    } catch (e) {
-      console.error('Error parsing message:', e);
-    }
-    return displayMessage;
   }
 
   private isGameStateSubscribed: boolean = false;
