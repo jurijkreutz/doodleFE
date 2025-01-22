@@ -19,9 +19,6 @@ COPY nginx/*.conf /etc/nginx/conf-available/
 # Remove default Nginx configs
 RUN rm -rf /etc/nginx/conf.d/*
 
-# Copy all Nginx configs (both production and staging)
-COPY nginx/*.conf /etc/nginx/conf.d/
-
 # Copy built files
 COPY --from=build /app/dist/doodle /usr/share/nginx/html
 
@@ -29,4 +26,4 @@ COPY --from=build /app/dist/doodle /usr/share/nginx/html
 EXPOSE 80 443
 
 # Use environment-specific config at runtime
-CMD ["sh", "-c", "cp /etc/nginx/conf-available/${NGINX_ENV}.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+CMD ["sh", "-c", "rm -f /etc/nginx/conf.d/*.conf && cp /etc/nginx/conf-available/${NGINX_ENV}.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
