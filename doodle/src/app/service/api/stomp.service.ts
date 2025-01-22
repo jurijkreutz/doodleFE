@@ -5,7 +5,9 @@ import {map, Observable} from "rxjs";
 import {NotificationService} from "../notification.service";
 import {Router} from "@angular/router";
 import {WordToDraw} from "../../models/response.models";
+import SockJS from "sockjs-client";
 import {environment} from "../../../environments/environment";
+
 
 @Injectable({
   providedIn: 'root'
@@ -17,21 +19,19 @@ export class StompService {
   constructor(private notificationService: NotificationService, private router: Router) {
     this.rxStomp = new RxStomp();
     this.configureStomp();
-    this.subscribeToErrors();
   }
 
   private configureStomp() {
-    let brokerURL: string;
-    if (environment.production) {
-      const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-      const hostname = window.location.hostname;
-      const port = window.location.port ? `:${window.location.port}` : '';
-      brokerURL = `${protocol}${hostname}${port}${environment.WEBSOCKET_URL}`;
-    } else {
-      brokerURL = environment.WEBSOCKET_URL;
-    }
+    // Remove the brokerURL logic and use webSocketFactory instead
     const config: RxStompConfig = {
-      brokerURL: brokerURL,
+      // Use SockJS instead of native WebSocket
+      webSocketFactory: () => {
+        const wsUrl = environment.production
+          ? `${window.location.origin}/ws`
+          : environment.WEBSOCKET_URL;
+
+        return new SockJS(wsUrl);
+      },
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
       reconnectDelay: 200,
