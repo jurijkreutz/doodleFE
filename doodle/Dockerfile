@@ -8,7 +8,7 @@ COPY . .
 
 # Build for production by default (override with --build-arg)
 ARG ENV=production
-RUN npm run build -- --configuration=$ENV
+RUN npm run build -- --configuration=${ENV}
 
 FROM nginx:1.21-alpine
 
