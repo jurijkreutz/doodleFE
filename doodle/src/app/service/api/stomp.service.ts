@@ -24,7 +24,8 @@ export class StompService {
         const wsUrl = environment.production
           ? `${window.location.origin}/ws`
           : environment.WEBSOCKET_URL;
-        const sock = new SockJS(wsUrl);
+        // @ts-ignore
+        const sock = new SockJS(wsUrl, undefined, { withCredentials: true });
         sock.onerror = (error) => {
           console.error('SockJS error:', error);
         };
