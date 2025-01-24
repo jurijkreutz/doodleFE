@@ -15,10 +15,9 @@ export class StompService {
 
   constructor() {
     this.rxStomp = new RxStomp();
-    this.configureStomp();
   }
 
-  private configureStomp() {
+  public configureStomp() {
     const config: RxStompConfig = {
       webSocketFactory: () => {
         const wsUrl = environment.production

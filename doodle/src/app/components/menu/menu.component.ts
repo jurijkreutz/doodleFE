@@ -86,6 +86,7 @@ export class MenuComponent {
     this.restService.sendInitializeSessionRequest(username, avatar).subscribe(
       () => {
         console.log('Session initialized');
+        this.stompService.configureStomp();
         this.stompService.reconnect();
         this.isOverlayVisible = false;
         this.heartBeatService.startHeartbeat();
