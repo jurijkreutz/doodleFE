@@ -26,4 +26,6 @@ COPY --from=build /app/dist/doodle /usr/share/nginx/html
 EXPOSE 80 443
 
 # Use environment-specific config at runtime
+ARG NGINX_ENV=production
+ENV NGINX_ENV=$NGINX_ENV
 CMD ["sh", "-c", "rm -f /etc/nginx/conf.d/*.conf && cp /etc/nginx/conf-available/${NGINX_ENV}.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
