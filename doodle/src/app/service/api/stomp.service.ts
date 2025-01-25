@@ -12,23 +12,39 @@ import {environment} from "../../../environments/environment";
 export class StompService {
 
   private rxStomp: RxStomp;
+  private sessionId: string | null = null;
 
   constructor() {
     this.rxStomp = new RxStomp();
+    this.loadSessionIdFromLocalStorage();
+  }
+
+  public loadSessionIdFromLocalStorage(): void {
+    this.sessionId = localStorage.getItem('sessionId');
   }
 
   public configureStomp() {
+    this.loadSessionIdFromLocalStorage(); // Refresh session ID on each configuration
+
     const config: RxStompConfig = {
       webSocketFactory: () => {
-        const wsUrl = environment.production
+        let wsUrl = environment.production
           ? `${window.location.origin}/ws`
           : environment.WEBSOCKET_URL;
-        // @ts-ignore
-        const sock = new SockJS(wsUrl, undefined, { withCredentials: true });
+
+        // Add session ID to query parameters
+        const url = new URL(wsUrl);
+        url.searchParams.set('sessionId', this.sessionId || '');
+        wsUrl = url.toString();
+
+        const sock = new SockJS(wsUrl);
         sock.onerror = (error) => {
           console.error('SockJS error:', error);
         };
         return sock;
+      },
+      connectHeaders: {
+        'X-Session-ID': this.sessionId || '' // Add to headers for WebSocket
       },
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
@@ -74,7 +90,10 @@ export class StompService {
   }
 
   public sendMessage(lobbyId: string, message: any) {
-    this.rxStomp.publish({ destination: `/app/chat.send/${lobbyId}`, body: JSON.stringify(message) });
+    this.rxStomp.publish({
+      destination: `/app/chat.send/${lobbyId}`,
+      body: JSON.stringify(message),
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 
   /* Game */
@@ -97,16 +116,23 @@ export class StompService {
     const guessDTO = { guess };
     this.rxStomp.publish({
       destination: `/app/game-state.guess/${lobbyId}`,
-      body: JSON.stringify(guessDTO)
+      body: JSON.stringify(guessDTO),
+      headers: { 'X-Session-ID': this.sessionId || '' }
     });
   }
 
   public sendUpdateSpeed(lobbyId: string, message: any) {
-    this.rxStomp.publish({ destination: `/app/chat.changeSpeed/${lobbyId}`, body: JSON.stringify(message) });
+    this.rxStomp.publish({
+      destination: `/app/chat.changeSpeed/${lobbyId}`,
+      body: JSON.stringify(message),
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 
   public sendUpdateRounds(lobbyId: string, message: any) {
-    this.rxStomp.publish({ destination: `/app/chat.changeRounds/${lobbyId}`, body: JSON.stringify(message) });
+    this.rxStomp.publish({
+      destination: `/app/chat.changeRounds/${lobbyId}`,
+      body: JSON.stringify(message),
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 
   public sendStartGame(lobbyId: string | null, speed: string, rounds: number) {
@@ -114,8 +140,13 @@ export class StompService {
       console.error('Lobby ID is null or undefined');
       return;
     }
-    this.rxStomp.publish({ destination: `/app/chat.startGame/${lobbyId}`, body: '{}' });
-    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`, body: JSON.stringify({ speed: speed, rounds: rounds }) });
+    this.rxStomp.publish({
+      destination: `/app/chat.startGame/${lobbyId}`,
+      body: '{}',
+      headers: { 'X-Session-ID': this.sessionId || '' }});
+    this.rxStomp.publish({ destination: `/app/game-state.start/${lobbyId}`,
+      body: JSON.stringify({ speed: speed, rounds: rounds }),
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 
   public subscribeToGuessNotification(lobbyId: string, callback: (message: any) => void) {
@@ -138,7 +169,10 @@ export class StompService {
   }
 
   public sendDrawingEvents(lobbyId: string, drawingEvents: any[]) {
-    this.rxStomp.publish({ destination: `/app/drawing/${lobbyId}`, body: JSON.stringify(drawingEvents) });
+    this.rxStomp.publish({
+      destination: `/app/drawing/${lobbyId}`,
+      body: JSON.stringify(drawingEvents),
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 
   public subscribeToWordChannel(callback: (word: WordToDraw) => void) {
@@ -159,6 +193,9 @@ export class StompService {
   }
 
   private sendReadyMessage(lobbyId: string) {
-    this.rxStomp.publish({ destination: `/app/game-state.ready/${lobbyId}`, body: '{}' });
+    this.rxStomp.publish({
+      destination: `/app/game-state.ready/${lobbyId}`,
+      body: '{}',
+      headers: { 'X-Session-ID': this.sessionId || '' }});
   }
 }

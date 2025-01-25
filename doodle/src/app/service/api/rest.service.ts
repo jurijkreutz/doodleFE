@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import {HttpClient, HttpErrorResponse, HttpParams} from "@angular/common/http";
-import {catchError, Observable, throwError} from "rxjs";
+import {HttpClient, HttpErrorResponse, HttpHeaders, HttpParams} from "@angular/common/http";
+import {catchError, Observable, tap, throwError} from "rxjs";
 import {IsOwnerResponse, JoinLobbyResponse} from "../../models/response.models";
 import {environment} from "../../../environments/environment";
 
@@ -9,16 +9,34 @@ import {environment} from "../../../environments/environment";
 })
 export class RestService {
   private readonly REST_URL = environment.REST_URL;
+  private sessionId: string | null = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    this.loadSessionId();
+  }
 
-  public sendInitializeSessionRequest(username: string, avatar: number): Observable<void> {
+  private loadSessionId(): void {
+    this.sessionId = localStorage.getItem('sessionId');
+  }
+
+  private getHeaders(): HttpHeaders {
+    return new HttpHeaders({
+      'X-Session-ID': this.sessionId || ''
+    });
+  }
+
+
+  public sendInitializeSessionRequest(username: string, avatar: number): Observable<{ sessionId: string }> {
     const url = `${this.REST_URL}/session`;
     const params = new HttpParams()
       .set('userName', username)
       .set('avatar', avatar.toString());
-    const options = { params, withCredentials: true };
-    return this.http.get<void>(url, options).pipe(
+
+    return this.http.get<{ sessionId: string }>(url, { params }).pipe(
+      tap(response => {
+        this.sessionId = response.sessionId;
+        localStorage.setItem('sessionId', response.sessionId);
+      }),
       catchError(this.handleError)
     );
   }
@@ -26,14 +44,19 @@ export class RestService {
   public sendJoinLobbyRequest(lobbyId: string): Observable<JoinLobbyResponse> {
     const url = `${this.REST_URL}/lobby/join`;
     const params = new HttpParams().set('lobbyId', lobbyId);
-    return this.http.post<JoinLobbyResponse>(url, {}, { params, withCredentials: true}).pipe(
+    return this.http.post<JoinLobbyResponse>(url, {}, {
+      params,
+      headers: this.getHeaders()
+    }).pipe(
       catchError(this.handleError)
     );
   }
 
   public sendCreateLobbyRequest(): Observable<JoinLobbyResponse> {
     const url = `${this.REST_URL}/lobby/create`;
-    return this.http.post<any>(url, {}, { withCredentials: true }).pipe(
+    return this.http.post<JoinLobbyResponse>(url, {}, {
+      headers: this.getHeaders()
+    }).pipe(
       catchError(this.handleError)
     );
   }
@@ -41,21 +64,29 @@ export class RestService {
   public sendIsOwnerRequest(lobbyId: string): Observable<IsOwnerResponse> {
     const url = `${this.REST_URL}/lobby/isOwner`;
     const params = new HttpParams().set('lobbyId', lobbyId);
-    return this.http.get<IsOwnerResponse>(url, { params, withCredentials: true }).pipe(
+    return this.http.get<IsOwnerResponse>(url, {
+      params,
+      headers: this.getHeaders()
+    }).pipe(
       catchError(this.handleError)
     );
   }
 
   public sendHeartbeatRequest(): Observable<void> {
     const url = `${this.REST_URL}/session/heartbeat`;
-    return this.http.post<void>(url, {}, { withCredentials: true }).pipe(
+    return this.http.post<void>(url, {}, {
+      headers: this.getHeaders()
+    }).pipe(
       catchError(this.handleError)
     );
-
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('RestService: Error occurred: ', error);
-    return throwError(() => new Error(error.error.message));
+    // Auto-clear session if we get unauthorized response
+    if (error.status === 401) {
+      localStorage.removeItem('sessionId');
+    }
+    return throwError(() => new Error(error.error?.message || 'Unknown error occurred'));
   }
 }
