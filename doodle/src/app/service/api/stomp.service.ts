@@ -28,9 +28,15 @@ export class StompService {
 
     const config: RxStompConfig = {
       webSocketFactory: () => {
-        let wsUrl = environment.production
-          ? `${window.location.origin}/ws`
-          : environment.WEBSOCKET_URL;
+        let wsUrl: string;
+
+        if (environment.production) {
+          // Production: Use current origin
+          wsUrl = `${window.location.origin}/ws`;
+        } else {
+          // Development/Staging: Use absolute URL from environment
+          wsUrl = environment.WEBSOCKET_URL;
+        }
 
         // Add session ID to query parameters
         const url = new URL(wsUrl);
