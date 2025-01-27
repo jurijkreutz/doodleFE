@@ -51,7 +51,7 @@
       </div>
       <div class="winners-podium" *ngIf="gameIsOver">
         <p>The game is over. Thank you for playing!</p>
-        <app-podium [scores]="scores"
+        <app-podium [scores]="scoreService.getScores()"
                     [playerList]="playerList">
         </app-podium>
       </div>
@@ -60,10 +60,10 @@
     </div>
     <div class="guess-section">
       <div class="score-window">
-        <div class="player-score" *ngFor="let player of scores | keyvalue">
+        <div class="player-score" *ngFor="let player of scoreService.getScores() | keyvalue">
           <div class="player-avatar-container">
             <img [src]="getAvatarUrl(player.key)" alt="Avatar" class="player-avatar">
-            <div class="score-badge" [ngClass]="getScoreClass(player.key)">
+            <div class="score-badge" [ngClass]="ScoreClass.getScoreClass(player.key, this.scoreService.getScores())">
               {{ player.value }}
             </div>
           </div>
@@ -95,28 +95,14 @@
         <div *ngIf="gameIsOver" class="guess-input">
           <button class="send-guess-button back-to-start-button" (click)="routeBackToStart()">Play again</button>
         </div>
-        <div *ngIf="isDrawer" class="color-picker">
-          <button *ngFor="let color of colors" [style.backgroundColor]="color" (click)="selectColor(color)" class="color-button">
-            <fa-icon *ngIf="selectedColor === color" [icon]="faCheck" class="check-icon"></fa-icon>
-          </button>
-          <div class="tool-picker">
-            <button class="brush-button" (click)="selectBrush()">
-              <fa-icon *ngIf="currentTool === 'brush' && selectedColor != '#ffffff'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
-              <img src="assets/game/brush.webp" alt="Brush" class="brush-icon">
-            </button>
-            <button class="fill-button" (click)="selectFillBucket()">
-              <fa-icon *ngIf="currentTool === 'fill'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
-              <img src="assets/game/bucket.webp" alt="Fill" class="fill-icon">
-            </button>
-            <button class="eraser-button" (click)="selectEraser()">
-              <fa-icon *ngIf="selectedColor === '#ffffff' && currentTool === 'brush'" [icon]="faArrowPointer" class="arrow-icon"></fa-icon>
-              <img src="assets/game/eraser.webp" alt="Eraser" class="eraser-icon">
-            </button>
-            <button class="trash-button" (click)="resetCanvas()">
-              <img src="assets/game/trash.webp" alt="Trash" class="eraser-icon">
-            </button>
-          </div>
-        </div>
+        <app-drawing-tools *ngIf="isDrawer"
+                           [colors]="colors"
+                           [selectedColor]="selectedColor"
+                           [currentTool]="currentTool"
+                           (colorSelected)="selectColor($event)"
+                           (toolSelected)="onToolSelected($event)"
+                           (canvasReset)="resetCanvas()">
+        </app-drawing-tools>
       </div>
     </div>
   </div>

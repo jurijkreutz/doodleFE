@@ -204,4 +204,12 @@ export class StompService {
       body: '{}',
       headers: { 'X-Session-ID': this.sessionId || '' }});
   }
+
+  public sendDrawerAck(lobbyId: string) {
+    this.rxStomp.publish({
+      destination: `/app/game-state.drawer-ack/${lobbyId}`,
+      body: '{}',
+      headers: { 'X-Session-ID': this.sessionId || '' }
+    });
+  }
 }

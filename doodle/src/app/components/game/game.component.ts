@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild} from '@angular/core';
 import {FormsModule} from "@angular/forms";
 import {KeyValuePipe, NgClass, NgForOf, NgIf, NgStyle} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
@@ -10,11 +10,16 @@ import {filter, Subject, take} from "rxjs";
 import confetti from 'canvas-confetti';
 import {NotificationService} from "../../service/notification.service";
 import {FaIconComponent} from "@fortawesome/angular-fontawesome";
-import {faCheck, faArrowPointer, faPaintBrush} from "@fortawesome/free-solid-svg-icons";
+import {faPaintBrush} from "@fortawesome/free-solid-svg-icons";
 import {FillBucket} from "./utils/fill-bucket";
 import {PodiumComponent} from "./podium/podium.component";
+import {ScoreService} from "../../service/ingame/score/score.service";
+import {GuessInfoService} from "../../service/ingame/guess-info/guess-info.service";
+import {TimeCalculator} from "./utils/time-calculator";
+import {ScoreClass} from "./utils/score-class";
+import {DrawingToolsComponent} from "./drawing-tools/drawing-tools.component";
 
-interface GameMessage {
+export interface GameMessage {
   type: string;
   user?: string;
   content: string;
@@ -33,17 +38,19 @@ interface GameMessage {
     NgClass,
     FaIconComponent,
     PodiumComponent,
-    NgStyle
+    NgStyle,
+    DrawingToolsComponent
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss'
 })
-export class GameComponent implements AfterViewInit, OnDestroy{
+export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
   @ViewChild('drawingCanvas') drawingCanvas!: ElementRef<HTMLCanvasElement>;
   @ViewChild('scrollMe') myScrollContainer!: ElementRef;
 
   private canvasContext!: CanvasRenderingContext2D;
   private isDrawing = false;
+  private hasDrawerWord: boolean = false;
   private lastSentSequence = 0;
   private receivedDrawingEvents: any[] = [];
   private sendTimerId: any = null;
@@ -66,7 +73,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   protected wordToDraw: string = '';
   protected wordOverlayShown: boolean = false;
   protected wordInHeadShown: boolean = false;
-  protected scores: Map<string, number> = new Map<string, number>();
   protected totalRounds: number = 0;
   protected remainingRounds: number = 100;
   protected correctlyGuessedWord: string = '';
@@ -100,6 +106,8 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   constructor(private route: ActivatedRoute,
               private stompService: StompService,
               private notificationService: NotificationService,
+              protected scoreService: ScoreService,
+              protected guessInfoService: GuessInfoService,
               private router: Router,
               private ngZone: NgZone) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
@@ -107,6 +115,22 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'];
     this.selectedRounds = this.router.getCurrentNavigation()?.extras.state?.['rounds'];
     this.redirectToStartOnGameStartTimeOut();
+  }
+
+  ngOnInit() {
+    this.guessInfoService.messages$.subscribe((newMessages) => {
+      this.messages.push(...newMessages);
+      setTimeout(() => this.scrollToBottom(), 50);
+    });
+    this.guessInfoService.showNextRoundScreen$.subscribe((nextRoundScreen) => {
+      this.showNextRoundScreen(nextRoundScreen.word, nextRoundScreen.message);
+    });
+    this.guessInfoService.resetEnvironment$.subscribe((triggerConfetti) => {
+      if (triggerConfetti) {
+        this.triggerConfetti();
+      }
+      this.resetEnvironment();
+    });
   }
 
   ngAfterViewInit() {
@@ -137,25 +161,10 @@ export class GameComponent implements AfterViewInit, OnDestroy{
         this.updateLocalGameState(gameState);
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
-        this.handleGuessNotification(guessEvaluation);
+        this.isWaitingForServer = false;
+        this.guessInfoService.handleGuessNotification(guessEvaluation);
       });
     }
-  }
-
-  private handleGuessNotification(guessEvaluation: any) {
-    this.isWaitingForServer = false;
-    if (guessEvaluation.status == "correctly") {
-      this.messages.push({ type: 'correctly', user: guessEvaluation.userThatGuessed, content: `guessed the word correctly! The word was ${guessEvaluation.word}.` });
-    } else if (guessEvaluation.status == "incorrectly") {
-      this.messages.push({ type: 'incorrectly', user: guessEvaluation.userThatGuessed, content: `${guessEvaluation.word}` });
-    }
-    if (guessEvaluation.status == "correctly") {
-      this.handleCorrectGuess(guessEvaluation);
-    } else if (guessEvaluation.status == "timeout") {
-      this.showNextRoundScreen(guessEvaluation.word, `Oops! Time is up. The word was:`);
-      this.resetEnvironment();
-    }
-    setTimeout(() => this.scrollToBottom(), 50);
   }
 
   private updateLocalGameState(gameState: any) {
@@ -171,7 +180,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
     this.playerList = gameState.players;
-    this.updatePlayerScores(gameState);
+    this.scoreService.updatePlayerScores(gameState);
     this.updateRemainingDrawingsInRound(gameState.players);
     if (this.remainingRounds === 0) {
       console.log('Game is over');
@@ -189,27 +198,16 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.roundBoxColumns = Math.ceil(Math.sqrt(playerList.length));
   }
 
-  private updatePlayerScores(gameState: any) {
-    if (typeof gameState.playerScores === 'object' && !Array.isArray(gameState.playerScores)) {
-      const sortedEntries = Object.entries(gameState.playerScores as Record<string, number>)
-        .sort((a, b) => b[1] - a[1]);
-      this.scores = new Map<string, number>(sortedEntries);
-    } else if (Array.isArray(gameState.playerScores)) {
-      const sortedArray = (gameState.playerScores as [string, number][]).sort((a, b) => b[1] - a[1]);
-      this.scores = new Map<string, number>(sortedArray);
-    }
-  }
-
   private handleCountdown(roundTime: number) {
     this.clearTimeoutAndInterval();
-    let pureRoundTime = this.calculatePureRoundTime(roundTime);
+    let pureRoundTime = TimeCalculator.calculatePureRoundTime(this.isFirstRound, roundTime, this.SCREEN_OVERLAY_DURATION_SECONDS);
     const totalDuration = pureRoundTime;
     const progressBar = document.getElementById('progress-bar') as HTMLElement;
     this.resetProgressBar(progressBar);
-    const screenOverlayWaitTime = this.calculateScreenOverlayWaitTime();
+    const screenOverlayWaitTime = TimeCalculator.calculateScreenOverlayWaitTime(this.isFirstRound, this.SCREEN_OVERLAY_DURATION_SECONDS);
     this.isFirstRound = false;
     this.isWaitingForDrawer = true;
-    this.countdownTimeout = setTimeout(() => { // wait while the overlays are being shown
+    this.countdownTimeout = setTimeout(() => {
       this.clearCanvas();
       this.pushNewDrawingChatMessage();
       this.countdownInterval = setInterval(() => {
@@ -238,15 +236,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     pureRoundTime--;
     this.updateProgressBar(pureRoundTime, totalDuration, progressBar);
     return pureRoundTime;
-  }
-
-  private calculateScreenOverlayWaitTime() {
-    return this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 : this.SCREEN_OVERLAY_DURATION_SECONDS * 1000 * 2;
-  }
-
-  private calculatePureRoundTime(roundTime: number) {
-    return roundTime -
-      (this.isFirstRound ? this.SCREEN_OVERLAY_DURATION_SECONDS : this.SCREEN_OVERLAY_DURATION_SECONDS * 2);
   }
 
   private clearTimeoutAndInterval() {
@@ -313,20 +302,13 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     }, delay);
   }
 
-  private handleCorrectGuess(guessEvaluation: any) {
-    this.resetEnvironment();
-    this.triggerConfetti();
-    this.showNextRoundScreen(
-      guessEvaluation.word,
-      `${guessEvaluation.userThatGuessed} has guessed correctly. The word was:`);
-  }
-
   private resetEnvironment() {
     this.isDrawer = false;
     this.removeCanvasEventListeners();
     this.wordToDraw = '';
     this.wordOverlayShown = false;
     this.wordInHeadShown = false;
+    this.hasDrawerWord = false;
   }
 
   private triggerConfetti() {
@@ -339,10 +321,23 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private subscribeToWordChannel() {
     this.stompService.subscribeToWordChannel((word) => {
-      this.waitForNextRoundScreenToClose().then(() => {
+      if (this.hasDrawerWord) {
+        console.log("Ignoring duplicate word message");
+        return;
+      }
+      this.hasDrawerWord = true;
+      if (!this.nextRoundScreenShown) {
         this.prepareDrawingEnv(true);
         this.showWordToDraw(word);
-      });
+      } else {
+        this.waitForNextRoundScreenToClose().then(() => {
+          this.prepareDrawingEnv(true);
+          this.showWordToDraw(word);
+        });
+      }
+      if (this.lobbyId) {
+        this.stompService.sendDrawerAck(this.lobbyId);
+      }
     });
   }
 
@@ -350,7 +345,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.nextRoundScreenShown = value;
     this.nextRoundScreenSubject.next(value);
   }
-
 
   private showNextRoundScreen(guessEvaluation: string, userThatGuessed: string) {
     this.correctlyGuessedWord = guessEvaluation;
@@ -420,21 +414,15 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.canvasContext.lineJoin = 'round';
 
     if (this.isDrawer) {
-      // 1) pointerdown => setPointerCapture + startDrawing
       canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-        // ask the canvas to keep sending pointer events
         canvas.setPointerCapture(e.pointerId);
         this.startDrawing(e);
       });
-
-      // 2) pointermove => only draw if isDrawing
       canvas.addEventListener('pointermove', (e: PointerEvent) => {
         if (this.isDrawing) {
           this.draw(e);
         }
       });
-
-      // 3) pointerup => releasePointerCapture + stopDrawing
       canvas.addEventListener('pointerup', (e: PointerEvent) => {
         canvas.releasePointerCapture(e.pointerId);
         this.stopDrawing();
@@ -453,7 +441,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
         this.drawingCanvas.nativeElement.height);
     }
   }
-
 
   private getMousePosition(event: MouseEvent) {
     const rect = this.drawingCanvas.nativeElement.getBoundingClientRect();
@@ -492,7 +479,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
       return;
     }
-
     this.isDrawing = true;
     this.currentStrokePoints.push(pos);
     this.canvasContext.beginPath();
@@ -512,18 +498,12 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (!this.isDrawing) return;
     this.isDrawing = false;
     this.canvasContext.closePath();
-
-    // Final partial update for any leftover unsent points
     this.sendPartialStrokeUpdate();
-
-    // Then send 'stop'
     if (this.lobbyId && this.currentStrokeId) {
       const stopEvent = { type: 'stop', strokeId: this.currentStrokeId };
       this.stompService.sendDrawingEvents(this.lobbyId, [stopEvent]);
       this.currentStrokeId = null;
     }
-
-    // Now reset for the next stroke
     this.currentStrokePoints = [];
     this.lastSentIndex = 0;
   }
@@ -532,13 +512,8 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (!this.lobbyId) return;
     if (!this.currentStrokeId) return;
     if (this.currentStrokePoints.length <= this.lastSentIndex) return;
-
-    // Extract only the *new* points since the last time we sent
     const newPoints = this.currentStrokePoints.slice(this.lastSentIndex);
     this.lastSentIndex = this.currentStrokePoints.length;
-    // Now we've "caught up" to the end
-
-    // Construct partial-stroke
     this.lastSentSequence++;
     const partialStrokeEvent = {
       type: 'partial-stroke',
@@ -548,7 +523,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       color: this.selectedColor,
       lineWidth: this.canvasContext.lineWidth
     };
-
     this.stompService.sendDrawingEvents(this.lobbyId, [partialStrokeEvent]);
   }
 
@@ -557,6 +531,14 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       this.currentTool = 'brush';
     }
     this.selectedColor = color;
+  }
+
+  protected onToolSelected(tool: string) {
+    switch(tool) {
+      case 'brush': this.selectBrush(); break;
+      case 'fill': this.selectFillBucket(); break;
+      case 'eraser': this.selectEraser(); break;
+    }
   }
 
   protected selectEraser() {
@@ -588,13 +570,9 @@ export class GameComponent implements AfterViewInit, OnDestroy{
 
   private processDrawingEvent(drawingEvents: any[]) {
     if (this.isDrawer) return;
-
-    // Combine & sort everything by sequence:
     this.receivedDrawingEvents.push(...drawingEvents);
     this.receivedDrawingEvents.sort((a, b) => a.sequence - b.sequence);
 
-    // Now apply them all at once in the correct order.
-    // Using runOutsideAngular is optional but helps prevent performance hits:
     this.ngZone.runOutsideAngular(() => {
       requestAnimationFrame(() => {
         while (this.receivedDrawingEvents.length) {
@@ -635,21 +613,15 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     if (drawingEvent.type === 'partial-stroke') {
       const strokeId = drawingEvent.strokeId;
 
-      // If we have no current stroke, or if this is a NEW strokeId,
-      // then begin a new path
       if (!this.currentStrokeIdOnGuesser || this.currentStrokeIdOnGuesser !== strokeId) {
-        // If we were already in a stroke, close it
         if (this.isInStroke) {
           this.canvasContext.closePath();
         }
-        // Start new stroke
         this.isInStroke = true;
         this.currentStrokeIdOnGuesser = strokeId;
         this.canvasContext.beginPath();
         this.lastPoint = null;
       }
-
-      // Now draw the points as usual
       drawingEvent.points.forEach((pt: { x: number; y: number }) => {
         if (!this.lastPoint) {
           this.canvasContext.moveTo(pt.x, pt.y);
@@ -661,7 +633,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       });
     }
     else if (drawingEvent.type === 'stop') {
-      // If the strokeId matches the current stroke, let's close that path
       if (this.currentStrokeIdOnGuesser === drawingEvent.strokeId) {
         this.canvasContext.closePath();
         this.isInStroke = false;
@@ -670,7 +641,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
       }
     }
   }
-
 
   private subscribeToDrawingEvents() {
     if (this.lobbyId) {
@@ -691,11 +661,7 @@ export class GameComponent implements AfterViewInit, OnDestroy{
   }
 
   protected scrollToBottom(): void {
-    try {
-      this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
-    } catch(err) {
-      console.error('Could not automatically scroll to bottom: ', err);
-    }
+    this.myScrollContainer.nativeElement.scrollTop = this.myScrollContainer.nativeElement.scrollHeight;
   }
 
   private redirectToStartOnGameStartTimeOut() {
@@ -714,18 +680,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     return `/assets/avatars/avatar-${avatar}.webp`;
   }
 
-  protected getScoreClass(playerName: string): string {
-    const scoresArray = [...this.scores.values()];
-    const highestScore = Math.max(...scoresArray);
-    const secondHighest = scoresArray.sort((a, b) => b - a)[1] || 0;
-    const score = this.scores.get(playerName);
-
-    if (score === highestScore) return 'gold-badge';
-    if (score === secondHighest) return 'silver-badge';
-    if (score === undefined || score < 0) return 'negative-score';
-    return 'default-badge';
-  }
-
   private handleGameFinish() {
     this.gameIsOver = true;
     this.clearTimeoutAndInterval();
@@ -735,7 +689,6 @@ export class GameComponent implements AfterViewInit, OnDestroy{
     this.router.navigate(['/menu']);
   }
 
-  protected readonly faCheck = faCheck;
-  protected readonly faArrowPointer = faArrowPointer;
   protected readonly faPaintBrush = faPaintBrush;
+  protected readonly ScoreClass = ScoreClass;
 }
