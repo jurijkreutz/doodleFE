@@ -29,11 +29,11 @@
         <div id="progress-bar-container" *ngIf="!gameIsOver">
           <div id="progress-bar"></div>
         </div>
-      <div class="waiting-for-start-box" *ngIf="isWaitingForGameStart">
+      <div class="waiting-for-start-box" *ngIf="isWaitingForGameStart && !gameIsOver">
         Waiting for all users to be ready...
         <div class="loader"></div>
       </div>
-      <div class="waiting-for-start-box" *ngIf="isWaitingForDrawer">
+      <div class="waiting-for-start-box" *ngIf="isWaitingForDrawer && !gameIsOver">
         The next drawer is {{this.nextDrawer}}.
         <div class="loader"></div>
       </div>
