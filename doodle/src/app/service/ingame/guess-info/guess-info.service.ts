@@ -23,7 +23,7 @@ export class GuessInfoService {
     if (guessEvaluation.status == "correctly") {
       this.messagesSubject.next([{ type: 'correctly', user: guessEvaluation.userThatGuessed, content: `guessed the word correctly! The word was ${guessEvaluation.word}.` }]);
     } else if (guessEvaluation.status == "incorrectly") {
-      this.messagesSubject.next([{ type: 'incorrectly', user: guessEvaluation.userThatGuessed, content: `guessed the word incorrectly. The word was ${guessEvaluation.word}.` }]);
+      this.messagesSubject.next([{ type: 'incorrectly', user: guessEvaluation.userThatGuessed, content: `${guessEvaluation.word}` }]);
     }
     if (guessEvaluation.status == "correctly") {
       this.handleCorrectGuess(guessEvaluation);

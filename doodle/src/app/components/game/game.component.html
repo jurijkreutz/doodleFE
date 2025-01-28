@@ -87,8 +87,8 @@
         </div>
       </div>
       <div class="controls">
-        <div *ngIf="!isDrawer && !gameIsOver" class="guess-input">
-          <input type="text" [(ngModel)]="messageContent" placeholder="Type a guess" (keydown.enter)="sendGuess()"
+        <div *ngIf="!isDrawer || gameIsOver" class="guess-input">
+          <input type="text" [(ngModel)]="messageContent" [placeholder]="gameIsOver ? 'Continue chatting or start a new game' : 'Type a guess / chat'" (keydown.enter)="sendGuess()"
           [attr.maxlength]="maxGuessLength">
           <button class="send-guess-button" (click)="sendGuess()">Send</button>
         </div>
