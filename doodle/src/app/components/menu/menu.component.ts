@@ -93,8 +93,9 @@ export class MenuComponent {
       },
       (error: HttpErrorResponse) => {
         console.error('Error initializing session: ', error.message);
-        // TODO: If Error message is failed to fetch, show a generic error message
-        this.notificationService.showError('Error initializing session: ' + error.message);
+        this.notificationService.showAsyncError('Error initializing session. Please try again. Reloading...').then(
+          () => window.location.reload()
+        );
       }
     );
   }
