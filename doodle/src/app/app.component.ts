@@ -1,5 +1,5 @@
 import {Component, OnDestroy, OnInit} from '@angular/core';
-import {NavigationEnd, Router, RouterOutlet} from '@angular/router';
+import {NavigationEnd, Router, RouterLink, RouterOutlet} from '@angular/router';
 import {RestService} from "./service/api/rest.service";
 import {NotificationComponent} from "./notification/notification.component";
 import {HeartbeatService} from "./service/heartbeat.service";
@@ -10,7 +10,7 @@ import {FontAwesomeModule} from "@fortawesome/angular-fontawesome";
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, NotificationComponent, NgIf, FontAwesomeModule],
+  imports: [RouterOutlet, NotificationComponent, NgIf, FontAwesomeModule, RouterLink],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
