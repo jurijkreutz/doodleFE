@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {IMessage, Message} from "@stomp/stompjs";
 import {RxStomp, RxStompConfig} from "@stomp/rx-stomp";
-import {WordToDraw} from "../../models/response.models";
+import {DrawingEventDTO, WordToDraw} from "../../models/response.models";
 import SockJS from "sockjs-client";
 import {environment} from "../../../environments/environment";
 
@@ -54,10 +54,7 @@ export class StompService {
       },
       heartbeatIncoming: 0,
       heartbeatOutgoing: 20000,
-      reconnectDelay: 200,
-      debug: (msg: string) => {
-        console.log('- Stomp: ' + msg);
-      },
+      reconnectDelay: 200
     };
 
     this.rxStomp.configure(config);
@@ -169,6 +166,12 @@ export class StompService {
   }
 
   public subscribeToDrawingEvents(lobbyId: string, callback: (drawingEvents: any[]) => void) {
+    this.rxStomp.watch(`/topic/lobby/${lobbyId}/drawing`).subscribe((message: Message) => {
+      callback(JSON.parse(message.body));
+    });
+  }
+
+  public subscribeToDrawingEventsHistory(lobbyId: string, callback: (drawingEvents: DrawingEventDTO[]) => void) {
     this.rxStomp.watch(`/topic/lobby/${lobbyId}/drawing`).subscribe((message: Message) => {
       callback(JSON.parse(message.body));
     });

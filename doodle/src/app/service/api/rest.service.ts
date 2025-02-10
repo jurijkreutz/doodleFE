@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {HttpClient, HttpErrorResponse, HttpHeaders, HttpParams} from "@angular/common/http";
 import {catchError, Observable, tap, throwError} from "rxjs";
-import {IsOwnerResponse, JoinLobbyResponse} from "../../models/response.models";
+import {DrawerInfoResponse, IsOwnerResponse, JoinLobbyResponse} from "../../models/response.models";
 import {environment} from "../../../environments/environment";
 
 @Injectable({
@@ -20,6 +20,9 @@ export class RestService {
   }
 
   private getHeaders(): HttpHeaders {
+    if (!this.sessionId) {
+      this.loadSessionId();
+    }
     return new HttpHeaders({
       'X-Session-ID': this.sessionId || ''
     });
@@ -81,9 +84,26 @@ export class RestService {
     );
   }
 
+  public getGameState(lobbyId: string): Observable<any> {
+    const url = `${this.REST_URL}/game/state`;
+    const params = new HttpParams().set('lobbyId', lobbyId);
+    return this.http.get<any>(url, { params, headers: this.getHeaders() });
+  }
+
+  public getDrawingHistory(lobbyId: string): Observable<any[]> {
+    const url = `${this.REST_URL}/game/drawingHistory`;
+    const params = new HttpParams().set('lobbyId', lobbyId);
+    return this.http.get<any[]>(url, { params, headers: this.getHeaders() });
+  }
+
+  public getDrawerInfo(lobbyId: string): Observable<DrawerInfoResponse> {
+    const url = `${this.REST_URL}/game/drawer`;
+    const params = new HttpParams().set('lobbyId', lobbyId);
+    return this.http.get<DrawerInfoResponse>(url, { params, headers: this.getHeaders() });
+  }
+
   private handleError(error: HttpErrorResponse): Observable<never> {
     console.error('RestService: Error occurred: ', error);
-    // Auto-clear session if we get unauthorized response
     if (error.status === 401) {
       localStorage.removeItem('sessionId');
     }

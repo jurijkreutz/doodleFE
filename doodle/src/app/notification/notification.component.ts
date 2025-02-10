@@ -13,12 +13,16 @@ import {NgIf} from "@angular/common";
 })
 export class NotificationComponent implements OnInit {
   message: string = '';
+  info: string = '';
 
   constructor(private notificationService: NotificationService) {}
 
   ngOnInit(): void {
     this.notificationService.error$.subscribe((message) => {
       this.message = message;
+    });
+    this.notificationService.info$.subscribe((info) => {
+      this.info = info;
     });
   }
 }

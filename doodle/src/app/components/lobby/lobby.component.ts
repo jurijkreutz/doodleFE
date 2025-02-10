@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, ElementRef, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, ElementRef, OnInit, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
 import {NgForOf, NgIf} from "@angular/common";
 import {StompService} from "../../service/api/stomp.service";
@@ -17,7 +17,7 @@ import {Player} from "../../models/response.models";
   templateUrl: './lobby.component.html',
   styleUrl: './lobby.component.scss'
 })
-export class LobbyComponent implements AfterViewInit {
+export class LobbyComponent implements AfterViewInit, OnInit {
   protected lobbyId: string | null;
   protected isOwner: boolean;
   protected copiedCodeToClipboard: boolean = false;
@@ -40,6 +40,11 @@ export class LobbyComponent implements AfterViewInit {
     this.playerList = this.router.getCurrentNavigation()?.extras.state?.['players'] || [];
     this.selectedRounds = parseInt(this.router.getCurrentNavigation()?.extras.state?.['rounds']) || 5;
     this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'] || 'rapid';
+  }
+
+  ngOnInit() {
+    localStorage.removeItem('hasVisitedGame');
+    localStorage.removeItem('initialTotalRounds');
   }
 
   ngAfterViewInit() {

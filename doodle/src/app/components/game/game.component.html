@@ -37,8 +37,12 @@
         The next drawer is {{this.nextDrawer}}.
         <div class="loader"></div>
       </div>
+      <div *ngIf="isResumingGameInProgress" class="waiting-for-start-box">
+        Resuming Game...
+        <div class="loader"></div>
+      </div>
       <div class="waiting-for-start-box" *ngIf="currentTool === 'none' && isDrawer && !isWaitingForGameStart &&
-      !isWaitingForDrawer && !gameIsOver">
+      !isWaitingForDrawer && !gameIsOver && !isResumedGame">
         Choose a tool to start drawing!
         <div class="start-tool-picker">
         <button class="brush-button" (click)="selectBrush()">

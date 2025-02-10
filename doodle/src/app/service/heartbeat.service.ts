@@ -18,6 +18,10 @@ export class HeartbeatService {
   }
 
   public startHeartbeat(): void {
+    if (this.heartbeatInterval) {
+      console.warn('Heartbeat is already running');
+      return;
+    }
     this.heartbeatInterval = setInterval(() => {
       this.restService.sendHeartbeatRequest().subscribe(
         () => console.log('Heartbeat sent'),
@@ -25,7 +29,6 @@ export class HeartbeatService {
           console.error('Heartbeat failed:', error);
           this.failureCount++;
           this.notificationService.showError('Connection lost... Retrying...');
-
           if (this.failureCount >= this.maxFailures) {
             this.handleConnectionLost();
           }

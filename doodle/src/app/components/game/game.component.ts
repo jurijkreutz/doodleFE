@@ -4,9 +4,9 @@ import {KeyValuePipe, NgClass, NgForOf, NgIf, NgStyle} from "@angular/common";
 import {ActivatedRoute, Router} from "@angular/router";
 import {StompService} from "../../service/api/stomp.service";
 import {WordOverlayComponent} from "./word-overlay/word-overlay.component";
-import {Player, WordToDraw} from "../../models/response.models";
+import {DrawingEventDTO, Player, WordToDraw} from "../../models/response.models";
 import {NextRoundOverlayComponent} from "./next-round-overlay/next-round-overlay.component";
-import {filter, Subject, take} from "rxjs";
+import {catchError, filter, of, Subject, take, tap} from "rxjs";
 import confetti from 'canvas-confetti';
 import {NotificationService} from "../../service/notification.service";
 import {FaIconComponent} from "@fortawesome/angular-fontawesome";
@@ -18,6 +18,8 @@ import {GuessInfoService} from "../../service/ingame/guess-info/guess-info.servi
 import {TimeCalculator} from "./utils/time-calculator";
 import {ScoreClass} from "./utils/score-class";
 import {DrawingToolsComponent} from "./drawing-tools/drawing-tools.component";
+import {RestService} from "../../service/api/rest.service";
+import {HeartbeatService} from "../../service/heartbeat.service";
 
 export interface GameMessage {
   type: string;
@@ -61,6 +63,8 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
   private lastPoint: { x: number; y: number } | null = null;
   private currentStrokeId: string | null = null;
   private currentStrokeIdOnGuesser: string | null = null;
+  protected isResumingGameInProgress: boolean = false;
+  private gameStartTimeoutId: any;
 
   // protected values for template binding
   protected maxGuessLength: number = 30;
@@ -80,6 +84,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
   protected nextDrawer: string = '';
   protected nextRoundScreenShown: boolean = false;
   protected colors: string[] = ['#000000', '#ed7a70', '#FBBC04', '#fbee4e', '#b5fa61', '#78fadc', '#7cdcf1', '#bb7cf3'];
+  protected isResumedGame: boolean = false;
 
   private isOwner: boolean = false;
   private selectedSpeed: string = '';
@@ -96,6 +101,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
 
   private countdownInterval: any;
   private countdownTimeout: any;
+  private timePerDrawing: number | null = null;
 
   private nextRoundScreenSubject = new Subject<boolean>();
 
@@ -105,9 +111,11 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
 
   constructor(private route: ActivatedRoute,
               private stompService: StompService,
+              private restService: RestService,
               private notificationService: NotificationService,
               protected scoreService: ScoreService,
               protected guessInfoService: GuessInfoService,
+              private heartBeatService: HeartbeatService,
               private router: Router,
               private ngZone: NgZone) {
     this.lobbyId = this.route.snapshot.paramMap.get('id');
@@ -115,9 +123,14 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     this.selectedSpeed = this.router.getCurrentNavigation()?.extras.state?.['speed'];
     this.selectedRounds = this.router.getCurrentNavigation()?.extras.state?.['rounds'];
     this.redirectToStartOnGameStartTimeOut();
+    const storedTotalRounds = localStorage.getItem('initialTotalRounds');
+    if (storedTotalRounds) {
+      this.totalRounds = parseInt(storedTotalRounds, 10);
+    }
   }
 
   ngOnInit() {
+    this.stompService.configureStomp();
     this.guessInfoService.messages$.subscribe((newMessages) => {
       this.messages.push(...newMessages);
       setTimeout(() => this.scrollToBottom(), 50);
@@ -133,11 +146,91 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     });
   }
 
+  private resumeGameState(): void {
+    this.heartBeatService.startHeartbeat();
+    if (this.lobbyId) {
+      this.isResumedGame = true;
+      this.isResumingGameInProgress = true;
+      this.isWaitingForDrawer = false;
+      this.prepareDrawingEnv(false, true);
+      this.restService.getGameState(this.lobbyId).pipe(
+        tap(response => {
+          this.notificationService.showInfo('Resuming game...');
+          this.updateLocalGameState(response, false);
+        }),
+        catchError(error => {
+          console.error('Error fetching game state:', error);
+          this.notificationService.showError('Failed to resume game state. Redirecting to start.');
+          this.isResumingGameInProgress = false;
+          this.isResumedGame = false;
+          this.router.navigate(['/']);
+          return of(null);
+        })
+      ).subscribe(gameStateResponse => {
+        if (gameStateResponse) {
+          this.restService.getDrawingHistory(this.lobbyId!).pipe(
+            tap(drawingHistory => {
+              console.log('Received drawing history:', drawingHistory);
+              if (drawingHistory && drawingHistory.length > 0) {
+                this.replayDrawingHistory(drawingHistory);
+                this.isResumingGameInProgress = false;
+              }
+            }),
+            catchError(error => {
+              console.error('Error fetching drawing history:', error);
+              this.prepareDrawingEnv(false, this.isResumedGame);
+              return of([]);
+            })
+          ).subscribe(() => {
+            this.checkIfUserIsDrawer();
+            this.isResumingGameInProgress = false;
+          });
+        } else {
+          this.isResumingGameInProgress = false;
+          this.isResumedGame = false;
+        }
+      });
+    }
+  }
+
+  private checkIfUserIsDrawer(): void {
+    if (this.lobbyId) {
+      this.restService.getDrawerInfo(this.lobbyId).pipe(
+        catchError(error => {
+          console.error('Error checking if user is drawer:', error);
+          return of({ isDrawer: false, wordToDraw: null });
+        })
+      ).subscribe(response => {
+        if (response && response.isDrawer) {
+          console.log(response);
+          this.isDrawer = true;
+          this.wordToDraw = response.wordToDraw!;
+          this.wordInHeadShown = true;
+          this.prepareDrawingEnv(true, this.isResumedGame);
+        } else {
+          this.isDrawer = false;
+          console.log('User is not the drawer.');
+          this.prepareDrawingEnv(false, this.isResumedGame);
+        }
+      });
+    }
+  }
+
+
   ngAfterViewInit() {
+    this.subscribeToDrawingHistory();
     this.subscribeToGame();
-    this.prepareDrawingEnv(false);
+    const hasVisitedGame = localStorage.getItem('hasVisitedGame');
+    if (hasVisitedGame === 'true') {
+      this.resumeGameState();
+    } else {
+      localStorage.setItem('hasVisitedGame', 'true');
+    }
+    if (!this.isResumedGame) {
+      this.prepareDrawingEnv(false, false);
+    }
     this.subscribeToWordChannel();
-    if (this.isOwner) {
+    if (this.isOwner && !hasVisitedGame) {
       this.stompService.sendStartGame(this.lobbyId, this.selectedSpeed, this.selectedRounds);
     }
     this.partialStrokeTimerId = setInterval(() => {
@@ -148,6 +241,9 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   ngOnDestroy() {
+    if (this.gameStartTimeoutId) {
+      clearTimeout(this.gameStartTimeoutId);
+    }
     this.clearTimeoutAndInterval();
     if (!this.gameIsOver) {
       this.removeCanvasEventListeners();
@@ -155,10 +251,32 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     clearInterval(this.sendTimerId)
   }
 
+  private subscribeToDrawingHistory() {
+    if (this.lobbyId) {
+      this.stompService.subscribeToDrawingEventsHistory(this.lobbyId, (drawingHistory: DrawingEventDTO[]) => {
+        if (drawingHistory && drawingHistory.length > 0) {
+          this.replayDrawingHistory(drawingHistory);
+        }
+      });
+    }
+  }
+
+  private replayDrawingHistory(drawingEvents: DrawingEventDTO[]) {
+    drawingEvents.forEach(event => {
+      this.applyDrawingEvent(event);
+    });
+  }
+
   private subscribeToGame() {
     if (this.lobbyId) {
       this.stompService.subscribeToGameState(this.lobbyId, (gameState) => {
-        this.updateLocalGameState(gameState);
+        if (gameState) {
+          this.isResumedGame = false;
+          this.updateLocalGameState(gameState, true);
+          this.clearCanvas();
+        } else {
+          this.isWaitingForGameStart = true;
+        }
       });
       this.stompService.subscribeToGuessNotification(this.lobbyId, (guessEvaluation) => {
         this.isWaitingForServer = false;
@@ -167,28 +285,26 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     }
   }
 
-  private updateLocalGameState(gameState: any) {
-    if (this.totalRounds === 0) {
+  private updateLocalGameState(gameState: any, isComingFromSubscription: boolean = false) {
+    if (localStorage.getItem('initialTotalRounds') === null) {
       this.totalRounds = gameState.remainingRounds;
+      localStorage.setItem('initialTotalRounds', gameState.remainingRounds.toString());
+    } else {
+      this.totalRounds = parseInt(localStorage.getItem('initialTotalRounds')!, 10);
     }
-    this.drawingsInCurrentRound++;
-    if (gameState.remainingRounds < this.remainingRounds) {
-      this.drawingsInCurrentRound = 1;
-    }
+    this.drawingsInCurrentRound = gameState.currentDrawerIndex + 1;
     this.remainingRounds = gameState.remainingRounds;
     this.isWaitingForGameStart = false;
-    this.clearCanvas();
     this.nextDrawer = gameState.drawerName;
     this.playerList = gameState.players;
     this.scoreService.updatePlayerScores(gameState);
     this.updateRemainingDrawingsInRound(gameState.players);
     if (this.remainingRounds === 0) {
-      console.log('Game is over');
       this.handleGameFinish();
       return;
     }
     let roundTime: number = gameState.roundTime;
-    this.handleCountdown(roundTime);
+    this.handleCountdown(roundTime, isComingFromSubscription);
   }
 
   protected roundBoxColumns: number = 0;
@@ -198,27 +314,69 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     this.roundBoxColumns = Math.ceil(Math.sqrt(playerList.length));
   }
 
-  private handleCountdown(roundTime: number) {
+  private handleCountdown(roundTime: number, isComingFromSubscription: boolean) {
     this.clearTimeoutAndInterval();
-    let pureRoundTime = TimeCalculator.calculatePureRoundTime(this.isFirstRound, roundTime, this.SCREEN_OVERLAY_DURATION_SECONDS);
+    let pureRoundTime: number;
+    if (isComingFromSubscription) {
+      pureRoundTime = TimeCalculator.calculatePureRoundTime(this.isFirstRound, roundTime, this.SCREEN_OVERLAY_DURATION_SECONDS);
+    } else {
+      pureRoundTime = roundTime;
+    }
     const totalDuration = pureRoundTime;
+    if (isComingFromSubscription) {
+      this.timePerDrawing = totalDuration;
+      localStorage.setItem('timePerDrawing', totalDuration.toString());
+    } else {
+      if (!this.timePerDrawing) {
+        const stored = localStorage.getItem('timePerDrawing');
+        if (stored) {
+          this.timePerDrawing = parseFloat(stored);
+        } else {
+          this.timePerDrawing = roundTime;
+        }
+      }
+    }
     const progressBar = document.getElementById('progress-bar') as HTMLElement;
-    this.resetProgressBar(progressBar);
+    if (isComingFromSubscription) {
+      this.resetProgressBar(progressBar, totalDuration);
+    } else {
+      this.resetProgressBar(progressBar, roundTime);
+    }
     const screenOverlayWaitTime = TimeCalculator.calculateScreenOverlayWaitTime(this.isFirstRound, this.SCREEN_OVERLAY_DURATION_SECONDS);
     this.isFirstRound = false;
-    this.isWaitingForDrawer = true;
-    this.countdownTimeout = setTimeout(() => {
-      this.clearCanvas();
-      this.pushNewDrawingChatMessage();
-      this.countdownInterval = setInterval(() => {
-        if (pureRoundTime > 0) {
-          pureRoundTime = this.countDownTime(pureRoundTime, totalDuration, progressBar);
-        } else {
-          this.waitForServerIfTimeIsUp();
-        }
-      }, 1000);
-      this.isWaitingForDrawer = false;
-    }, screenOverlayWaitTime);
+    if (!this.isResumedGame) {
+      this.isWaitingForDrawer = true;
+      this.countdownTimeout = setTimeout(() => {
+        this.clearCanvas();
+        this.pushNewDrawingChatMessage();
+        this.startRoundTimer(pureRoundTime, progressBar);
+        this.isWaitingForDrawer = false;
+      }, screenOverlayWaitTime);
+    } else {
+      if (isComingFromSubscription) {
+        this.isWaitingForDrawer = true;
+        this.countdownTimeout = setTimeout(() => {
+          this.clearCanvas();
+          this.pushNewDrawingChatMessage();
+          this.startRoundTimer(pureRoundTime, progressBar);
+          this.isWaitingForDrawer = false;
+        }, screenOverlayWaitTime);
+      } else {
+        this.isWaitingForDrawer = false;
+        this.pushNewDrawingChatMessage();
+        this.startRoundTimer(pureRoundTime, progressBar);
+      }
+    }
+  }
+
+  private startRoundTimer(remainingTime: number, progressBar: HTMLElement) {
+    this.countdownInterval = setInterval(() => {
+      if (remainingTime > 0) {
+        remainingTime = this.countDownTime(remainingTime, progressBar);
+      } else {
+        this.waitForServerIfTimeIsUp();
+      }
+    }, 1000);
   }
 
   private pushNewDrawingChatMessage() {
@@ -232,10 +390,10 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     this.handleServerTimeout();
   }
 
-  private countDownTime(pureRoundTime: number, totalDuration: number, progressBar: HTMLElement) {
-    pureRoundTime--;
-    this.updateProgressBar(pureRoundTime, totalDuration, progressBar);
-    return pureRoundTime;
+  private countDownTime(remainingTime: number, progressBar: HTMLElement) {
+    remainingTime--;
+    this.updateProgressBar(remainingTime, progressBar);
+    return remainingTime;
   }
 
   private clearTimeoutAndInterval() {
@@ -247,8 +405,8 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     }
   }
 
-  private updateProgressBar(roundTime: number, totalDuration: number, progressBar: HTMLElement) {
-    const progressPercentage = (roundTime / totalDuration) * 100;
+  private updateProgressBar(remainingTime: number, progressBar: HTMLElement) {
+    const progressPercentage = Math.min((remainingTime / this.timePerDrawing!) * 100, 100);
     if (progressBar) {
       progressBar.style.width = `${progressPercentage}%`;
       switch (true) {
@@ -269,12 +427,13 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
           }
       }
     }
-    console.log('Round time:', roundTime);
+    // console.log('Remaining time:', remainingTime);
   }
 
-  private resetProgressBar(progressBar: HTMLElement) {
-    if (progressBar) {
-      progressBar.style.width = '100%';
+  private resetProgressBar(progressBar: HTMLElement, remainingTime: number) {
+    if (progressBar && this.timePerDrawing) {
+      const progressPercentage = (remainingTime / this.timePerDrawing) * 100;
+      progressBar.style.width = `${progressPercentage}%`;
       progressBar.style.backgroundColor = '#4caf50';
       progressBar.classList.remove('pulsate');
     }
@@ -327,11 +486,11 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
       }
       this.hasDrawerWord = true;
       if (!this.nextRoundScreenShown) {
-        this.prepareDrawingEnv(true);
+        this.prepareDrawingEnv(true, this.isResumedGame);
         this.showWordToDraw(word);
       } else {
         this.waitForNextRoundScreenToClose().then(() => {
-          this.prepareDrawingEnv(true);
+          this.prepareDrawingEnv(true, this.isResumedGame);
           this.showWordToDraw(word);
         });
       }
@@ -386,18 +545,20 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     }
   }
 
-  private prepareDrawingEnv(isDrawer: boolean) {
+  private prepareDrawingEnv(isDrawer: boolean, isResumedGame: boolean) {
     if (!isDrawer) {
       this.removeCanvasEventListeners();
     }
-    this.resetDrawingEnvToCleanState();
+    this.resetDrawingEnvToCleanState(isResumedGame);
     this.isDrawer = isDrawer;
     this.setupCanvas();
     this.subscribeToDrawingEvents();
   }
 
-  private resetDrawingEnvToCleanState() {
-    this.clearCanvas();
+  private resetDrawingEnvToCleanState(isResumedGame: boolean) {
+    if (!isResumedGame) {
+      this.clearCanvas();
+    }
     this.isDrawing = false;
     if (this.canvasContext) {
       this.canvasContext.closePath();
@@ -414,6 +575,9 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
     this.canvasContext.lineJoin = 'round';
 
     if (this.isDrawer) {
+      if (!this.isResumedGame) {
+        this.resetCanvas();
+      }
       canvas.addEventListener('pointerdown', (e: PointerEvent) => {
         canvas.setPointerCapture(e.pointerId);
         this.startDrawing(e);
@@ -665,7 +829,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy{
   }
 
   private redirectToStartOnGameStartTimeOut() {
-    setTimeout(() => {
+    this.gameStartTimeoutId = setTimeout(() => {
       if (this.isWaitingForGameStart) {
         this.notificationService.showAsyncError('Game has not started in time. Redirecting to start...')
           .then(() => {
