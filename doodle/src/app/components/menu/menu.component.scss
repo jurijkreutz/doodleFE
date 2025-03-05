@@ -49,6 +49,12 @@
   text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.8);
 }
 
+@media (max-height: 900px) {
+  .game-info-box {
+    margin-top: 10px !important;
+  }
+}
+
 .game-info-box h3 {
   font-size: 24px;
   font-weight: 500;
@@ -189,4 +195,20 @@ input {
 .fade-out {
   opacity: 0;
   transition: opacity 0.3s ease-out;
+}
+
+.footer {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  font-family: "Rubik", sans-serif;
+  text-align: center;
+  padding: 0 10px;
+  white-space: nowrap;
+  font-size: 0.9rem;
+  color: #000000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

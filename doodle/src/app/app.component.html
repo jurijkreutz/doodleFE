@@ -1,11 +1,21 @@
 <a [routerLink]="['/']">
-  <img *ngIf="isStart" src="assets/logo_sketchoff_650_t.png" alt="Doodle Logo" class="doodle-logo-start">
-  <img *ngIf="!isStart" src="assets/logo_sketchoff_500_t_ns.png" alt="Doodle Logo" class="doodle-logo">
+  <img *ngIf="isStart && isDesktop" src="assets/logo_sketchoff_650_t.png" alt="Doodle Logo" class="doodle-logo-start">
+  <img *ngIf="!isStart && isDesktop" src="assets/logo_sketchoff_500_t_ns.png" alt="Doodle Logo" class="doodle-logo">
 </a>
-<div class="main-content">
+<div class="main-content" *ngIf="isDesktop">
   <router-outlet></router-outlet>
 </div>
-<app-notification></app-notification>
-<div class="footer">
-  <p>Part of <strong>buildteam</strong> – the easiest way for online teambuilding sessions</p>
+<div class="main-content-mobile" *ngIf="!isDesktop">
+  <div class="mobile-info-box">
+    <img src="assets/logo_sketchoff_650_t.png" alt="Doodle Logo" class="mobile-logo">
+    <h3>Hey there, fellow Sketcher!</h3>
+    <p>
+      SketchOff is a fun and competitive drawing game.
+      <br>It is best played on a desktop or laptop.
+      <br>Feel free to switch to a bigger screen to enjoy the game!
+      <br><br>SketchOff is not playable on mobile yet.
+      <br>Thank you for understanding!
+    </p>
+  </div>
 </div>
+<app-notification></app-notification>

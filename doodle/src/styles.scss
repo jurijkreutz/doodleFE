@@ -1,12 +1,20 @@
-body {
-  height: 100vh;
+html, body {
+  height: 100%;
   margin: 0;
-  padding: 1px 0 0;
-  width: 100%;
-  overflow-x: hidden;
-  background: rgba(190, 178, 162, 0.9);
+  padding: 0;
 }
 
-:root {
-  background-image: url('/assets/bg_new.webp');
+body.no-scroll {
+  height: 100vh;
+  overflow: hidden !important;
+}
+
+body {
+  background: linear-gradient(
+      rgba(190, 178, 162, 0.9),
+      rgba(190, 178, 162, 0.9)
+  ),
+  url('/assets/bg_new.webp') no-repeat center center fixed;
+  background-size: cover;
+  overflow-x: hidden;
 }
